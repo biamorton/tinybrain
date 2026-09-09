@@ -1,0 +1,2 @@
+semantic_dim,state_dim,inner_steps,parameter_count,parameter_mb,rss_mb,training_seconds,inference_latency_ms,mean_state_updates,heldout_accuracy,compositional_accuracy,in_distribution_accuracy,unusual_accuracy,demo_correct,accuracy_per_parameter_mb
+64,64,1,146850,0.5601882934570312,205.65625,473.97139180009253,1.851463750062976,2.720833333333333,0.3645833333333333,0.275,0.49166666666666664,0.0,False,0.6508228350924979

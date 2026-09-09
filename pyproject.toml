@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tinybrain-ai"
+version = "0.3.0"
+description = "Experimental laptop-friendly AI architecture with learned semantic state, recurrent working memory, and modular skills."
+requires-python = ">=3.10"
+dependencies = [
+  "torch>=2.2",
+  "numpy>=1.26",
+  "psutil>=5.9",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+tinybrain = "tinybrain.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tinybrain*"]

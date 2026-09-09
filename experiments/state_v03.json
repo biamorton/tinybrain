@@ -1,0 +1,239 @@
+{
+  "version": "0.3.0",
+  "model_path": "C:\\Users\\morto\\code\\tinybrain\\tinybrain\\models\\semantic_state.pt",
+  "config": {
+    "embed_dim": 48,
+    "encoder_hidden": 80,
+    "semantic_dim": 64,
+    "state_dim": 64,
+    "answer_hidden": 96,
+    "max_answer": 64,
+    "inner_steps": 1,
+    "max_bytes": 192
+  },
+  "parameter_count": 146850,
+  "parameter_mb": 0.5601882934570312,
+  "rss_mb": 205.65625,
+  "training_seconds": 473.97139180009253,
+  "inference_latency_ms": 1.851463750062976,
+  "mean_state_updates": 2.720833333333333,
+  "accuracy_per_parameter_mb": 0.6508228350924979,
+  "heldout": {
+    "name": "held-out linguistic",
+    "accuracy": 0.3645833333333333,
+    "correct": 175,
+    "n": 480,
+    "mean_updates": 2.720833333333333,
+    "latency_ms_per_episode": 1.851463750062976,
+    "by_stage": {
+      "1": {
+        "correct": 63,
+        "n": 80,
+        "accuracy": 0.7875
+      },
+      "2": {
+        "correct": 35,
+        "n": 80,
+        "accuracy": 0.4375
+      },
+      "3": {
+        "correct": 36,
+        "n": 80,
+        "accuracy": 0.45
+      },
+      "4": {
+        "correct": 21,
+        "n": 80,
+        "accuracy": 0.2625
+      },
+      "5": {
+        "correct": 6,
+        "n": 80,
+        "accuracy": 0.075
+      },
+      "6": {
+        "correct": 14,
+        "n": 80,
+        "accuracy": 0.175
+      }
+    },
+    "error_modes": {
+      "other": 209,
+      "exact": 175,
+      "other_mentioned_number": 27,
+      "last_mentioned_number": 44,
+      "ignored_transfer": 25
+    }
+  },
+  "compositional": {
+    "name": "compositional names/objects",
+    "accuracy": 0.275,
+    "correct": 55,
+    "n": 200,
+    "mean_updates": 3.26,
+    "latency_ms_per_episode": 1.8807614996330813,
+    "by_stage": {
+      "2": {
+        "correct": 22,
+        "n": 40,
+        "accuracy": 0.55
+      },
+      "3": {
+        "correct": 15,
+        "n": 40,
+        "accuracy": 0.375
+      },
+      "4": {
+        "correct": 10,
+        "n": 40,
+        "accuracy": 0.25
+      },
+      "5": {
+        "correct": 4,
+        "n": 40,
+        "accuracy": 0.1
+      },
+      "6": {
+        "correct": 4,
+        "n": 40,
+        "accuracy": 0.1
+      }
+    },
+    "error_modes": {
+      "other": 104,
+      "ignored_transfer": 14,
+      "other_mentioned_number": 15,
+      "exact": 55,
+      "last_mentioned_number": 12
+    }
+  },
+  "in_distribution": {
+    "name": "in-distribution templates",
+    "accuracy": 0.49166666666666664,
+    "correct": 118,
+    "n": 240,
+    "mean_updates": 2.783333333333333,
+    "latency_ms_per_episode": 1.4672933335532434,
+    "by_stage": {
+      "1": {
+        "correct": 40,
+        "n": 40,
+        "accuracy": 1.0
+      },
+      "2": {
+        "correct": 29,
+        "n": 40,
+        "accuracy": 0.725
+      },
+      "3": {
+        "correct": 28,
+        "n": 40,
+        "accuracy": 0.7
+      },
+      "4": {
+        "correct": 16,
+        "n": 40,
+        "accuracy": 0.4
+      },
+      "5": {
+        "correct": 2,
+        "n": 40,
+        "accuracy": 0.05
+      },
+      "6": {
+        "correct": 3,
+        "n": 40,
+        "accuracy": 0.075
+      }
+    },
+    "error_modes": {
+      "last_mentioned_number": 24,
+      "exact": 118,
+      "other": 77,
+      "other_mentioned_number": 13,
+      "ignored_transfer": 8
+    }
+  },
+  "unusual": {
+    "name": "unusual phrasing probes",
+    "accuracy": 0.0,
+    "correct": 0,
+    "n": 3,
+    "mean_updates": 2.3333333333333335,
+    "latency_ms_per_episode": 14.617800014093518,
+    "by_stage": {
+      "99": {
+        "correct": 0,
+        "n": 3,
+        "accuracy": 0.0
+      }
+    },
+    "error_modes": {
+      "other": 1,
+      "ignored_transfer": 1,
+      "last_mentioned_number": 1
+    }
+  },
+  "demo": {
+    "title": "Permanent benchmark: Bob / Rebekah",
+    "events": [
+      "Bob owns 5 crayons.",
+      "Rebekah gave Bob 2 crayons."
+    ],
+    "question": "How many crayons does Bob have?",
+    "expected": 7,
+    "predicted": 3,
+    "correct": false,
+    "n_updates": 2,
+    "latency_ms": 10.330300079658628
+  },
+  "unusual_cases": [
+    {
+      "title": "Unusual probe 1",
+      "events": [
+        "Bob started out with five crayons.",
+        "Rebekah passed a pair of crayons over to Bob."
+      ],
+      "question": "What's Bob's crayon total now?",
+      "expected": 7,
+      "predicted": 9,
+      "correct": false,
+      "n_updates": 2,
+      "latency_ms": 13.2383001036942
+    },
+    {
+      "title": "Unusual probe 2",
+      "events": [
+        "Initially, Maya was in possession of twelve stickers.",
+        "Then Maya let Carlos take three stickers."
+      ],
+      "question": "So how many stickers remain with Maya?",
+      "expected": 9,
+      "predicted": 12,
+      "correct": false,
+      "n_updates": 2,
+      "latency_ms": 15.423899982124567
+    },
+    {
+      "title": "Unusual probe 3",
+      "events": [
+        "Priya began with 4 books.",
+        "Sam handed Priya 6 books.",
+        "Diego owns 8 marbles."
+      ],
+      "question": "What number of books is Priya sitting on?",
+      "expected": 10,
+      "predicted": 8,
+      "correct": false,
+      "n_updates": 3,
+      "latency_ms": 16.012300038710237
+    }
+  ],
+  "training": {
+    "epochs": 20,
+    "per_stage": 600,
+    "lr": 0.002,
+    "seed": 1337,
+    "final_heldout_acc": 0.3788888888888889
+  }
+}
