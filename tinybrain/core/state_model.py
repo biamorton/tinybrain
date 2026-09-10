@@ -5,6 +5,11 @@ from dataclasses import asdict, dataclass
 import torch
 from torch import nn
 
+from tinybrain.core.object_files import (
+    ObjectFileMemory,
+    collate_spans,
+    object_file_summary,
+)
 from tinybrain.core.query_pointer import QueryPointerReadout
 from tinybrain.core.relational import (
     RelationalDecomposer,
@@ -32,6 +37,10 @@ class StateModelConfig:
     component_dim: int = 32
     role_aux: bool = False
     query_pointer: bool = False
+    object_files: bool = False
+    n_object_files: int = 6
+    object_dim: int = 32
+    max_units: int = 16
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -147,10 +156,17 @@ class SemanticStateModel(nn.Module):
             raise ValueError("n_components>1 cannot be combined with n_slots>1")
         if cfg.query_pointer and (cfg.n_slots > 1 or cfg.n_components > 1):
             raise ValueError("query_pointer cannot be combined with slots or components")
+        if cfg.object_files and (cfg.query_pointer or cfg.n_slots > 1 or cfg.n_components > 1):
+            raise ValueError("object_files cannot be combined with pointer, slots, or components")
+        if cfg.object_files and cfg.n_object_files < 2:
+            raise ValueError("n_object_files must be >= 2")
         self.use_slots = cfg.n_slots > 1
         self.use_relational = cfg.n_components > 1
         self.use_pointer = bool(cfg.query_pointer)
-        if self.use_pointer:
+        self.use_object_files = bool(cfg.object_files)
+        if self.use_object_files:
+            read_dim = cfg.object_dim
+        elif self.use_pointer:
             read_dim = cfg.state_dim
         elif self.use_relational:
             read_dim = cfg.component_dim
@@ -164,14 +180,19 @@ class SemanticStateModel(nn.Module):
         self.relational = None
         self.pointer = None
         encoder_dim = cfg.encoder_hidden * 2
-        if self.use_pointer:
+        if self.use_object_files:
+            self.memory = ObjectFileMemory(encoder_dim, cfg.object_dim, cfg.n_object_files)
+            self.init_state = None
+            self.init_slots = None
+            self.init_components = None
+            mention_in = cfg.object_dim
+        elif self.use_pointer:
             self.pointer = QueryPointerReadout(encoder_dim, cfg.state_dim)
             self.memory = None
             self.init_state = None
             self.init_slots = None
             self.init_components = None
             mention_in = encoder_dim
-            answer_q_dim = cfg.state_dim
         elif self.use_relational:
             encoder_dim = cfg.encoder_hidden * 2
             self.relational = RelationalDecomposer(
@@ -201,7 +222,12 @@ class SemanticStateModel(nn.Module):
             self.init_components = None
             mention_in = cfg.semantic_dim
             self.pointer = None
-        answer_in = cfg.state_dim if self.use_pointer else cfg.semantic_dim
+        if self.use_object_files:
+            answer_in = cfg.object_dim
+        elif self.use_pointer:
+            answer_in = cfg.state_dim
+        else:
+            answer_in = cfg.semantic_dim
         self.answer_head = AnswerHead(
             answer_in,
             read_dim,
@@ -257,9 +283,15 @@ class SemanticStateModel(nn.Module):
         token_attn_steps: list[list[list[float]]] = []
         relation_attn_steps: list[list[list[float]]] = []
         component_cosine_steps: list[float] = []
+        object_write_steps: list[list[list[float]]] = []
+        object_salience_steps: list[list[float]] = []
+        object_unit_steps: list[list[str]] = []
         last_memory = None
+        last_write_mass = None
 
-        if self.use_relational:
+        if self.use_object_files:
+            keys, values, usage = self.memory.new_memory(batch_size, device)
+        elif self.use_relational:
             memory = self.init_components.unsqueeze(0).expand(batch_size, -1, -1).contiguous()
         elif self.use_slots:
             slots = self.init_slots.unsqueeze(0).expand(batch_size, -1, -1).contiguous()
@@ -280,7 +312,41 @@ class SemanticStateModel(nn.Module):
                 else:
                     step_texts.append("")
                     mask_vals.append(0.0)
-            if self.use_pointer:
+            if self.use_object_files:
+                seq, token_mask = self.encode_sequences(step_texts)
+                starts, ends, span_mask, unit_tokens = collate_spans(
+                    step_texts,
+                    self.config.max_bytes,
+                    self.config.max_units,
+                    device=device,
+                )
+                exist = torch.tensor(mask_vals, device=device, dtype=torch.bool)
+                if span_mask.size(1) > 0:
+                    span_mask = span_mask & exist.unsqueeze(1)
+                mention_feat = keys.new_zeros(batch_size, self.config.object_dim)
+                write_mass = keys.new_zeros(batch_size, 0, self.config.n_object_files)
+                salience = keys.new_zeros(batch_size, 0)
+                for _ in range(inner):
+                    keys, values, usage, of_trace = self.memory.write_event(
+                        keys, values, usage, seq, starts, ends, span_mask
+                    )
+                    units = of_trace["units"]
+                    if units.size(1) > 0:
+                        denom = span_mask.sum(dim=1, keepdim=True).clamp_min(1).to(units.dtype)
+                        mention_feat = (units * span_mask.unsqueeze(-1).to(units.dtype)).sum(
+                            dim=1
+                        ) / denom
+                    write_mass = of_trace["write_mass"]
+                    salience = of_trace["salience"]
+                mention_steps.append(self.mention_head(mention_feat))
+                last_write_mass = write_mass
+                if return_trace:
+                    object_write_steps.append(
+                        write_mass[0].detach().cpu().tolist() if write_mass.numel() else []
+                    )
+                    object_salience_steps.append(salience[0].detach().cpu().tolist())
+                    object_unit_steps.append(unit_tokens[0])
+            elif self.use_pointer:
                 seq, token_mask = self.encode_sequences(step_texts)
                 exist = torch.tensor(mask_vals, device=device, dtype=torch.bool).unsqueeze(1)
                 token_mask = token_mask & exist
@@ -340,8 +406,50 @@ class SemanticStateModel(nn.Module):
 
         question_attn = None
         pointer_trace = {}
+        object_trace = {}
         question_sem = None
-        if self.use_pointer:
+        query = None
+        if self.use_object_files:
+            q_seq, _ = self.encode_sequences(questions)
+            q_starts, q_ends, q_span_mask, q_units = collate_spans(
+                questions,
+                self.config.max_bytes,
+                self.config.max_units,
+                device=device,
+            )
+            read_w, query, readout, q_attn = self.memory.read(
+                keys, values, usage, q_seq, q_starts, q_ends, q_span_mask
+            )
+            memory_read = readout
+            logits = self.answer_head(query, readout)
+            question_attn = read_w[0].detach().cpu().tolist()
+            if return_trace:
+                summary = object_file_summary(
+                    keys[:1],
+                    values[:1],
+                    usage[:1],
+                    last_write_mass[:1] if last_write_mass is not None else None,
+                    read_w[:1],
+                )
+                object_trace = {
+                    "object_files": True,
+                    "n_object_files": self.config.n_object_files,
+                    "local_units": object_unit_steps,
+                    "event_salience": object_salience_steps,
+                    "event_write_mass": object_write_steps,
+                    "question_units": q_units[0],
+                    "question_unit_attention": q_attn[0].detach().cpu().tolist()
+                    if q_attn.numel()
+                    else [],
+                    "file_usage": usage[0].detach().cpu().tolist(),
+                    "file_keys": keys[0].detach().cpu().tolist(),
+                    "file_values": values[0].detach().cpu().tolist(),
+                    "read_argmax": int(read_w[0].argmax().item()),
+                    "query": query[0].detach().cpu().tolist(),
+                    "readout": readout[0].detach().cpu().tolist(),
+                    **summary,
+                }
+        elif self.use_pointer:
             event_tokens = torch.cat(pointer_token_chunks, dim=1)
             event_mask = torch.cat(pointer_mask_chunks, dim=1)
             event_ids = torch.cat(pointer_event_index, dim=1)
@@ -400,7 +508,7 @@ class SemanticStateModel(nn.Module):
         mention_logits = torch.stack(mention_steps, dim=1)
         aux = {}
         if self.role_head is not None:
-            left = query if self.use_pointer else question_sem
+            left = query if (self.use_pointer or self.use_object_files) else question_sem
             feat = torch.cat([left, memory_read], dim=-1)
             aux["role_logits"] = self.role_head(feat)
             aux["xfer_qty_logits"] = self.xfer_qty_head(feat)
@@ -409,6 +517,7 @@ class SemanticStateModel(nn.Module):
                 "n_slots": self.config.n_slots if self.use_slots else 1,
                 "n_components": self.config.n_components if self.use_relational else 1,
                 "query_pointer": self.use_pointer,
+                "object_files": self.use_object_files,
                 "event_write_attention": write_attn_steps,
                 "event_update_delta": update_delta_steps,
                 "question_read_attention": question_attn,
@@ -416,6 +525,7 @@ class SemanticStateModel(nn.Module):
                 "event_relation_attention": relation_attn_steps,
                 "event_component_cosine": component_cosine_steps,
                 **pointer_trace,
+                **object_trace,
             }
             if self.use_relational and last_memory is not None:
                 read_w = None

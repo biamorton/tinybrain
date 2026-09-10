@@ -25,6 +25,7 @@ experiments/multislot_models/
 experiments/relational_models/
 experiments/roleaux_models/
 experiments/pointer_models/
+experiments/object_file_models/
 
 # Local runtime artifacts
 demo_memory.json

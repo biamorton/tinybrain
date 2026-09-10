@@ -147,9 +147,11 @@ v0.3D (training-only role aux vs answer-only, 3 seeds): **aux labels did not pro
 
 v0.3E (question attends over event tokens, 2 seeds): **C/D did not improve.** Counterfactual same-context pairs were 0%. Seed 2024 showed query collapse. Compare: `tinybrain compare-pointer`.
 
+v0.3F (input-anchored object files, 2 seeds): **writes can separate participants, but questions still read one file. C/D and CF both-correct did not improve.** Compare: `tinybrain compare-objectfiles`.
+
 ### Current limitations
 
-- A single latent vector does not reliably bind several people and objects at once. Slots, relational components, role-aux labels, and query-side token attention all failed to make C/D stable. Token attention can change with the question and still retrieve the wrong quantity.
+- A single latent vector does not reliably bind several people and objects at once. Slots, relational components, role-aux labels, and query-side token attention all failed to make C/D stable. Input-anchored object files can occupy distinct records, but questions still collapse onto one file and C/D stays unsolved.
 - One incoming/outgoing transfer is only partially learned; longer chains collapse.
 - Unusual wording (`started out with`, `a pair of`, `crayon total`) was **not** added to training and currently fails. That failure is kept.
 - Success on synthetic possession/transfer does **not** mean general language understanding.

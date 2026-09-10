@@ -142,6 +142,9 @@ def train(args: argparse.Namespace) -> dict:
         component_dim=getattr(args, "component_dim", 32),
         role_aux=getattr(args, "role_aux", False),
         query_pointer=getattr(args, "query_pointer", False),
+        object_files=getattr(args, "object_files", False),
+        n_object_files=getattr(args, "n_object_files", 6),
+        object_dim=getattr(args, "object_dim", 32),
     )
     model = SemanticStateModel(config).to(device)
     param_count = model.parameter_count()
@@ -175,7 +178,7 @@ def train(args: argparse.Namespace) -> dict:
         f"semantic={config.semantic_dim} state={config.state_dim} inner={config.inner_steps} "
         f"slots={config.n_slots} components={config.n_components} "
         f"symmetric={getattr(args, 'symmetric', False)} role_aux={config.role_aux} "
-        f"pointer={config.query_pointer}"
+        f"pointer={config.query_pointer} object_files={config.object_files}"
     )
 
     epoch_log = []
@@ -323,6 +326,9 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--role-aux", action="store_true")
     ap.add_argument("--role-aux-weight", type=float, default=0.5)
     ap.add_argument("--query-pointer", action="store_true")
+    ap.add_argument("--object-files", action="store_true")
+    ap.add_argument("--n-object-files", type=int, default=6)
+    ap.add_argument("--object-dim", type=int, default=32)
     ap.add_argument("--output", type=Path, required=True)
     return ap
 

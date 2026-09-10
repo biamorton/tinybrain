@@ -59,6 +59,9 @@ def parser() -> argparse.ArgumentParser:
     train_state.add_argument("--role-aux", action="store_true")
     train_state.add_argument("--role-aux-weight", type=float, default=0.5)
     train_state.add_argument("--query-pointer", action="store_true")
+    train_state.add_argument("--object-files", action="store_true")
+    train_state.add_argument("--n-object-files", type=int, default=6)
+    train_state.add_argument("--object-dim", type=int, default=32)
     train_state.add_argument("--output", type=Path, default=DEFAULT_STATE_MODEL)
 
     bench_state = s.add_parser("benchmark-state")
@@ -109,6 +112,14 @@ def parser() -> argparse.ArgumentParser:
     pointer.add_argument("--seeds", type=int, nargs="+", default=[1337, 2024, 4242])
     pointer.add_argument("--smoke", action="store_true")
     pointer.add_argument("--force", action="store_true")
+
+    objectfiles = s.add_parser("compare-objectfiles")
+    objectfiles.add_argument("--epochs", type=int, default=20)
+    objectfiles.add_argument("--per-stage", type=int, default=600)
+    objectfiles.add_argument("--batch-size", type=int, default=32)
+    objectfiles.add_argument("--seeds", type=int, nargs="+", default=[1337, 2024, 4242])
+    objectfiles.add_argument("--smoke", action="store_true")
+    objectfiles.add_argument("--force", action="store_true")
     return p
 
 
@@ -177,6 +188,10 @@ def main() -> None:
             cmd.extend(["--role-aux-weight", str(args.role_aux_weight)])
         if args.query_pointer:
             cmd.append("--query-pointer")
+        if args.object_files:
+            cmd.append("--object-files")
+            cmd.extend(["--n-object-files", str(args.n_object_files)])
+            cmd.extend(["--object-dim", str(args.object_dim)])
         raise SystemExit(subprocess.call(cmd))
 
     if args.command == "sweep-state":
@@ -299,6 +314,31 @@ def main() -> None:
             + extra
         )
         run_pointer(pointer_args)
+        return
+
+    if args.command == "compare-objectfiles":
+        from tinybrain.eval.state_object_files import build_parser as of_parser
+        from tinybrain.eval.state_object_files import run_compare as run_objectfiles
+
+        extra = []
+        if args.force:
+            extra.append("--force")
+        if args.smoke:
+            extra.append("--smoke")
+        of_args = of_parser().parse_args(
+            [
+                "--epochs",
+                str(args.epochs),
+                "--per-stage",
+                str(args.per_stage),
+                "--batch-size",
+                str(args.batch_size),
+                "--seeds",
+                *[str(x) for x in args.seeds],
+            ]
+            + extra
+        )
+        run_objectfiles(of_args)
         return
 
     if args.command == "benchmark-state":

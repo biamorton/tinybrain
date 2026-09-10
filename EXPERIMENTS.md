@@ -527,8 +527,95 @@ Control readout is question-independent by construction (same working state), so
 
 Query-side attention is not the missing mechanism for this byte-GRU substrate. Token states from the current encoder do not give the pointer a reliable identity to bind to.
 
+### Next
+
+v0.3F below tests **input-anchored persistent object files**.
+
+---
+
+## v0.3F — Input-anchored persistent object representations
+
+Hypothesis:
+
+> Does giving TinyBrain input-anchored, persistent, learned object records allow it to maintain participant identity and bind changing properties to the correct participant?
+
+This is **not** v0.4. Same encoder, Stages 1–3, symmetric questions, frozen probes. No name matching, no `gave` rules, no role labels.
+
+### Architecture
+
+Generic whitespace/punctuation spans (locality only, no types) are mean-pooled from byte-biGRU states. A shared salience/allocation/content-addressing module writes those candidates into **6 object files** (`object_dim=32`) with a learned key and value. Unused files are preferred via a learned allocation gate; matching existing files is content-based. Questions pool the same local units and content-address the files. Shared modules only.
+
+```powershell
+tinybrain compare-objectfiles --smoke
+tinybrain compare-objectfiles
+```
+
+### Controlled comparison
+
+| | single_sym | object_files |
+| --- | --- | --- |
+| event path | pooled vector + GRU | local spans → 6 object files |
+| question path | pooled vector + state | learned read over files |
+| params | 122,978 (0.469 MB) | 126,692 (0.483 MB) |
+| symmetric questions | yes | yes |
+| seeds | 1337, 2024 | same |
+
+Stopped after two seeds: C/D and CF both-correct did not improve. Seed 4242 was not run.
+
+Results: `experiments/state_v03f_object_files.csv` and `.json`.
+
+### Results (primary: CF both-correct)
+
+| arch | seed | S1 HO | S2+3 HO | A | B | C | D | C+D | CF ind | CF both | R-col | Bob | OOD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| single_sym | 1337 | 70.0 | 13.8 | 0.0 | 33.3 | 33.3 | 66.7 | **50.0** | 12.5 | **0.0** | 100 | 3 | 0/3 |
+| object_files | 1337 | 95.0 | 43.1 | 33.3 | 33.3 | 0.0 | 33.3 | **16.7** | 37.5 | **0.0** | 100 | **7** | 0/3 |
+| single_sym | 2024 | 77.5 | 20.6 | 33.3 | 66.7 | 0.0 | 33.3 | **16.7** | 37.5 | **0.0** | 100 | 3 | 1/3 |
+| object_files | 2024 | 95.0 | 30.6 | 33.3 | 33.3 | 0.0 | 0.0 | **0.0** | 25.0 | **0.0** | 100 | **7** | 2/3 |
+
+Held-out Stage 2+3 rose (43% / 31% vs 14% / 21%). C/D and CF both-correct did **not**.
+
+### Object-identity diagnostics (n=100: roles + CF + held-out transfers)
+
+| seed | active files | key cosine | value cosine | write collapse | consistency | separation | drift | over-merge | over-split |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1337 | 6.0 | 0.60 | 0.72 | 73% | 45.5% | 49% | 54.5% | 51% | 29% |
+| 2024 | 6.0 | 0.56 | 0.69 | 78% | 17.5% | 67% | 82.5% | 33% | 46% |
+
+Frozen CF name writes (diagnostic string match after inference, never used by the model):
+
+- Seed 1337: Bob/Rebekah **over-merged** onto file 2. Maya≠Liam and Alice≠Jenny on writes, but **both questions still read file 2**.
+- Seed 2024: Bob≠Rebekah, Maya≠Liam, Alice≠Jenny on writes. Sam/Priya over-merged. **Every pair still read one file.** Probe C wrote Bob→2, Rebekah→4 and the Rebekah question read file 4, then predicted **7**.
+
+### Error breakdown (Stage 2+3 held-out, n=160)
+
+| arch | seed | ignored | reversed | swap | other_person | arith | unrelated |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| single_sym | 1337 | 7 | 12 | 55 | 16 | 35 | 13 |
+| object_files | 1337 | 9 | 28 | 11 | 6 | 21 | 16 |
+| single_sym | 2024 | 1 | 18 | 65 | 16 | 24 | 3 |
+| object_files | 2024 | 13 | 30 | 4 | 4 | 42 | 18 |
+
+Swaps fell; reversed-transfer and arithmetic rose. Among identity-eval swaps, over-merging was present in 4/9 (seed 1337) and 3/10 (seed 2024). Errors are not explained by merge alone: read collapse is nearly total even when writes separate.
+
+Train 812s / 748s. Infer ~3.4–3.9 ms. RSS ~327 MB. Params 126,692 (0.483 MB).
+
+### Interpretation
+
+**CASE A** (object files work): not supported. CF both-correct is 0%. C/D is worse than control.
+
+**CASE B** (objects separate, answers fail): primary. Writes often land different names on different files, especially seed 2024, but values/updates are wrong and questions almost always read one file.
+
+**CASE C** (files collapse to one): not supported. Six files stay active; key cosine ≈ 0.56–0.60, not 1.0.
+
+**CASE D** (cannot re-identify): secondary. Consistency 46% / 18%. Same name often changes file across events.
+
+**CASE E** (one seed): Bob PASS repeated; C/D and CF both-correct failed on both seeds. Do not claim success.
+
+Input-anchored files prevent the v0.3B/v0.3C copy-collapse. Persistent identity is still not a usable readout: the question does not select the file that was written for the queried participant, and file values do not track the right quantity.
+
 ### Next (not implemented)
 
-Replace the sentence/token substrate with **explicit learned mention representations** (still unlabeled, still neural). Do not add slots, components, role rules, or width.
+Learned relation / state transition **between** persistent object files (CASE B). Do not add slots, width, or role rules. A second equally small bottleneck is question-to-file addressing; it is not solved by more files.
 
 v0.2 remains the intent-routing baseline.
