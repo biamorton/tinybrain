@@ -141,9 +141,11 @@ v0.3A (Stages 1–3 only, 12 configs): extra `inner_steps` did **not** reliably 
 
 v0.3B (4 learned 32-d slots vs 32-d single vector, 3 seeds): **C/D role probes did not improve.** Attention collapsed onto one slot. Compare: `tinybrain compare-multislot`.
 
+v0.3C (4 unlabeled event components + symmetric questioning, 3 seeds): **components collapsed to copies of one vector.** Symmetric questions moved C/D off zero but not stably. Compare: `tinybrain compare-relational`.
+
 ### Current limitations
 
-- A single latent vector does not reliably bind several people and objects at once. Four learned unlabeled slots (v0.3B) did not fix role C/D either.
+- A single latent vector does not reliably bind several people and objects at once. Four learned unlabeled slots (v0.3B) and four unlabeled event components (v0.3C) both collapsed.
 - One incoming/outgoing transfer is only partially learned; longer chains collapse.
 - Unusual wording (`started out with`, `a pair of`, `crayon total`) was **not** added to training and currently fails. That failure is kept.
 - Success on synthetic possession/transfer does **not** mean general language understanding.

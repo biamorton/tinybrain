@@ -322,10 +322,81 @@ RSS ~325 MB for both. Train ~3.5–4 min per seed. Inference ~1.2–1.6 ms/episo
 
 Do not add more slots on this evidence. The model already ignores three of four.
 
-### Next experiment (still not v0.4)
+v0.3C below tests unlabeled relational decomposition plus symmetric questioning.
 
-Target **semantic role / relational binding** in the update itself: the network needs a learned distinction between who loses and who gains, not just more addresses. That must still be learned from answers, not a `gave` parser. Role-auxiliary labels are a later option if an unsupervised relational update also fails.
+---
 
-Keep Bob/Rebekah and C/D frozen.
+## v0.3C — Relational representation + symmetric questioning
 
-v0.2 remains the intent-routing baseline.
+Hypothesis:
+
+> Can a tiny neural system discover reusable participant relationships when (1) an event is represented by multiple unlabeled latent components rather than one compressed semantic vector, and (2) the same resulting world is queried from multiple perspectives?
+
+This is **not** v0.4. No `gave` parser, no named roles in inference, no frozen probes in training.
+
+### Architecture
+
+**Control (`single_sym`):** existing 32-d single-vector working memory.
+
+**Treatment (`relational_sym`):** same byte biGRU, but events are not pooled to one vector first. Four learned queries attend over token hidden states → four unlabeled 32-d components → shared GRU relation → persistent 4-component working memory → question-time attention read.
+
+Both trained with **symmetric questioning** on stages 2–3: each transfer world is asked about both participants, with independently sampled question paraphrases. Half of transfer worlds initialize both people. Held-out S1/S2/S3 still uses the original one-query generator so the linguistic split stays comparable.
+
+```powershell
+tinybrain compare-relational --smoke
+tinybrain compare-relational
+```
+
+### Controlled comparison
+
+| | single_sym | relational_sym |
+| --- | --- | --- |
+| event encoding | 1 pooled vector | 4 unlabeled components |
+| working memory | 32-d GRU | 4 × 32-d |
+| params | 122,978 (0.469 MB) | 146,242 (0.558 MB) |
+| symmetric questions | yes | yes |
+| epochs / per-stage / stages | 20 / 600 / 1–3 | same |
+| seeds | 1337, 2024, 4242 | same |
+
+Results: `experiments/state_v03c_relational.csv` and `.json`.
+
+### Results (primary: frozen role C+D)
+
+| arch | seed | S1 HO | S2 HO | S3 HO | S2+3 HO | C | D | C+D | R probes | Bob | OOD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| single_sym | 1337 | 70.0 | 13.8 | 13.8 | 13.8 | 33.3 | 66.7 | **50.0** | 12.5 | 3 | 0/3 |
+| single_sym | 2024 | 77.5 | 20.0 | 21.3 | 20.6 | 0.0 | 33.3 | **16.7** | 37.5 | 3 | 1/3 |
+| single_sym | 4242 | 72.5 | 32.5 | 27.5 | 30.0 | 33.3 | 33.3 | **33.3** | 25.0 | 3 | 1/3 |
+| relational_sym | 1337 | 98.8 | 37.5 | 32.5 | 35.0 | 0.0 | 0.0 | **0.0** | 37.5 | 3 | 0/3 |
+| relational_sym | 2024 | 96.3 | 27.5 | 36.3 | 31.9 | 66.7 | 33.3 | **50.0** | 37.5 | 2 | 1/3 |
+| relational_sym | 4242 | 95.0 | 35.0 | 41.3 | 38.1 | 33.3 | 0.0 | **16.7** | 37.5 | 3 | 2/3 |
+
+Mean C+D: single_sym **33.3%**, relational_sym **22.2%**. Historical v0.3B single-vector C+D was **0%** (different training protocol).
+
+Mean S2+3 held-out: single_sym **21.5%**, relational_sym **35.0%**. Both are below the v0.3B no-symmetric mean of 46.7%. The original one-query held-out is now distribution-shifted relative to training.
+
+Bob/Rebekah: **never 7**. Predictions 3, 3, 3 / 3, 2, 3.
+
+### Component collapse (relational only)
+
+Every relational seed: mean pairwise cosine **≈ 1.0**. All four components become identical. Write/read attention is then uniform (~0.25) because the slots are copies of each other. This is collapse, not useful decomposition. Dominant-mass looks “spread out” only because the copies are interchangeable.
+
+### Error types (held-out Stage 2+3)
+
+`other_person_quantity` is now the modal miss for single_sym (47–67 / 160). Reversed transfer remains common (16–43). Symmetric questioning taught the model that another participant exists; it still does not stably pick the asked one.
+
+### Interpretation
+
+**CASE A** (relational improves C/D, no collapse): not supported.
+
+**CASE B** (symmetric questioning helps both, little architecture gap): partially. Symmetric training moved C/D off historical zero, but seed variance is large (0–50%), S2+3 held-out fell, and relational is not better than single-vector.
+
+**CASE C** (relational fails C/D and components collapse): **supported for the architecture question.** Four unlabeled components did not stay distinct. Do not add more components.
+
+**CASE E** (seed noise): also present on C/D. The collapse finding is stable; the C/D percentages are not.
+
+Do not treat relational decomposition as a success. The training-signal change is the more interesting result, and even that did not solve Bob/Rebekah or make C/D reliable.
+
+### Next
+
+v0.3D: keep the single-vector architecture (relational just copies one vector four times) and test whether **auxiliary role supervision** — training-only, not used at inference — can teach giver/recipient distinctions that answer-only loss does not.

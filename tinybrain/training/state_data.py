@@ -439,8 +439,120 @@ def generate_episode(
         compositional=compositional,
         transfer_qty=transfer_qty,
         transfer_direction=transfer_direction,
-        other_qty=other_qty,
+            other_qty=other_qty,
+        )
+
+
+def generate_episode_family(
+    stage: int,
+    rng: random.Random,
+    held_out: bool = False,
+    compositional: bool = False,
+    max_answer: int = 64,
+    symmetric: bool = False,
+) -> list[StateEpisode]:
+    """
+    One generated world, possibly multiple questions.
+
+    Symmetric mode asks about every transfer participant from the same
+    resulting world. Question wording is sampled independently. The neural
+    path still only sees raw sentences, not role labels.
+    """
+    if not symmetric or stage not in (2, 3):
+        return [
+            generate_episode(
+                stage,
+                rng,
+                held_out=held_out,
+                compositional=compositional,
+                max_answer=max_answer,
+            )
+        ]
+
+    if INCLUDE_PRONOUNS:
+        raise RuntimeError("pronoun generation is disabled for v0.3")
+
+    templates = HELD_TEMPLATES if held_out else TRAIN_TEMPLATES
+    names = list(COMPOSITIONAL_NAMES if compositional else NAMES)
+    objects = dict(COMPOSITIONAL_OBJECTS if compositional else OBJECTS)
+    obj_list = list(objects)
+    target_name, other_name = _pick_two_names(rng, names)
+    target_obj = rng.choice(obj_list)
+    init_both = rng.random() < 0.5
+
+    world = World()
+    events: list[str] = []
+    mentioned: list[int] = []
+
+    def possess(person: str, n: int) -> None:
+        world.set_possess(person, target_obj, n)
+        events.append(_possess_text(templates, person, target_obj, n, objects, rng))
+        mentioned.append(n)
+
+    def transfer(giver: str, receiver: str, n: int) -> None:
+        world.transfer(giver, receiver, target_obj, n)
+        events.append(_transfer_text(templates, giver, receiver, target_obj, n, objects, rng))
+        mentioned.append(n)
+
+    if stage == 2:
+        giver, receiver = other_name, target_name
+        recv_start = rng.randint(2, 12)
+        k = rng.randint(1, 6)
+        give_start = rng.randint(k, max(k, 12)) if init_both else 0
+        possess_order = [(receiver, recv_start)]
+        if init_both:
+            possess_order.append((giver, give_start))
+            rng.shuffle(possess_order)
+        for person, qty in possess_order:
+            possess(person, qty)
+        transfer(giver, receiver, k)
+    else:
+        giver, receiver = target_name, other_name
+        give_start = rng.randint(5, 16)
+        k = rng.randint(1, min(5, give_start - 1))
+        recv_start = rng.randint(1, 12) if init_both else 0
+        possess_order = [(giver, give_start)]
+        if init_both:
+            possess_order.append((receiver, recv_start))
+            rng.shuffle(possess_order)
+        for person, qty in possess_order:
+            possess(person, qty)
+        transfer(giver, receiver, k)
+
+    giver_final = world.get(giver, target_obj)
+    recv_final = world.get(receiver, target_obj)
+    if not (0 <= giver_final <= max_answer and 0 <= recv_final <= max_answer):
+        raise ValueError("generated answer out of range")
+
+    shared = dict(
+        events=list(events),
+        stage=stage,
+        held_out=held_out,
+        n_updates=len(events),
+        target_object=target_obj,
+        mentioned_numbers=list(mentioned),
+        compositional=compositional,
+        transfer_qty=k,
     )
+    receiver_ep = StateEpisode(
+        question=_question_text(templates, receiver, target_obj, rng),
+        answer=recv_final,
+        target_name=receiver,
+        initial_qty=recv_start,
+        transfer_direction="in",
+        other_qty=giver_final,
+        **shared,
+    )
+    giver_ep = StateEpisode(
+        question=_question_text(templates, giver, target_obj, rng),
+        answer=giver_final,
+        target_name=giver,
+        initial_qty=give_start,
+        transfer_direction="out",
+        other_qty=recv_final,
+        **shared,
+    )
+    return [receiver_ep, giver_ep]
 
 
 def generate_curriculum(
@@ -450,6 +562,7 @@ def generate_curriculum(
     stages: tuple[int, ...] = (1, 2, 3, 4, 5, 6),
     compositional: bool = False,
     max_answer: int = 64,
+    symmetric: bool = False,
 ) -> list[StateEpisode]:
     rng = random.Random(seed)
     episodes: list[StateEpisode] = []
@@ -459,20 +572,23 @@ def generate_curriculum(
         while made < per_stage and attempts < per_stage * 20:
             attempts += 1
             try:
-                ep = generate_episode(
+                family = generate_episode_family(
                     stage,
                     rng,
                     held_out=held_out,
                     compositional=compositional,
                     max_answer=max_answer,
+                    symmetric=symmetric,
                 )
             except ValueError:
                 continue
-            if 0 <= ep.answer <= max_answer and ep.events:
-                if is_frozen_episode(ep):
-                    continue
-                episodes.append(ep)
-                made += 1
+            if any(
+                not (0 <= ep.answer <= max_answer and ep.events) or is_frozen_episode(ep)
+                for ep in family
+            ):
+                continue
+            episodes.extend(family)
+            made += 1
         if made < per_stage:
             raise RuntimeError(f"could not generate {per_stage} stage-{stage} episodes")
     rng.shuffle(episodes)
@@ -759,12 +875,122 @@ ROLE_PROBES = [
 ]
 
 
+# Frozen structural-generalization probes. Training names/objects, unseen
+# arrangements. Never added to the training pool.
+RELATIONAL_PROBES = [
+    _role(
+        ["Nora has 3 cards.", "Emma has 6 cards.", "Emma gave Nora 2 cards."],
+        "How many cards does Nora have?",
+        5,
+        target_name="Nora",
+        target_object="cards",
+        mentioned=[3, 6, 2],
+        initial=3,
+        transfer_qty=2,
+        direction="in",
+        other_qty=4,
+        family="R_recv",
+    ),
+    _role(
+        ["Nora has 3 cards.", "Emma has 6 cards.", "Emma gave Nora 2 cards."],
+        "How many cards does Emma have?",
+        4,
+        target_name="Emma",
+        target_object="cards",
+        mentioned=[3, 6, 2],
+        initial=6,
+        transfer_qty=2,
+        direction="out",
+        other_qty=5,
+        family="R_give",
+    ),
+    _role(
+        ["Jenny has 8 cookies.", "Liam has 3 cookies.", "Jenny gave Liam 2 cookies."],
+        "How many cookies does Jenny have?",
+        6,
+        target_name="Jenny",
+        target_object="cookies",
+        mentioned=[8, 3, 2],
+        initial=8,
+        transfer_qty=2,
+        direction="out",
+        other_qty=5,
+        family="R_give",
+    ),
+    _role(
+        ["Jenny has 8 cookies.", "Liam has 3 cookies.", "Jenny gave Liam 2 cookies."],
+        "How many cookies does Liam have?",
+        5,
+        target_name="Liam",
+        target_object="cookies",
+        mentioned=[8, 3, 2],
+        initial=3,
+        transfer_qty=2,
+        direction="in",
+        other_qty=6,
+        family="R_recv",
+    ),
+    _role(
+        ["Carlos has 7 pencils.", "Carlos gave Diego 3 pencils."],
+        "How many pencils does Diego have?",
+        3,
+        target_name="Diego",
+        target_object="pencils",
+        mentioned=[7, 3],
+        initial=0,
+        transfer_qty=3,
+        direction="in",
+        other_qty=4,
+        family="R_c",
+    ),
+    _role(
+        ["Carlos has 7 pencils.", "Carlos gave Diego 3 pencils."],
+        "How many pencils does Carlos have?",
+        4,
+        target_name="Carlos",
+        target_object="pencils",
+        mentioned=[7, 3],
+        initial=7,
+        transfer_qty=3,
+        direction="out",
+        other_qty=3,
+        family="R_give",
+    ),
+    _role(
+        ["Priya has 9 buttons.", "Diego has 5 buttons.", "Priya gave Diego 4 buttons."],
+        "How many buttons does Priya have?",
+        5,
+        target_name="Priya",
+        target_object="buttons",
+        mentioned=[9, 5, 4],
+        initial=9,
+        transfer_qty=4,
+        direction="out",
+        other_qty=9,
+        family="R_give",
+    ),
+    _role(
+        ["Priya has 9 buttons.", "Diego has 5 buttons.", "Priya gave Diego 4 buttons."],
+        "How many buttons does Diego have?",
+        9,
+        target_name="Diego",
+        target_object="buttons",
+        mentioned=[9, 5, 4],
+        initial=5,
+        transfer_qty=4,
+        direction="in",
+        other_qty=5,
+        family="R_recv",
+    ),
+]
+
+
 def episode_key(episode: StateEpisode) -> tuple[tuple[str, ...], str]:
     return (tuple(episode.events), episode.question)
 
 
 def frozen_episodes() -> list[StateEpisode]:
-    return [DEMO_EPISODE, *UNUSUAL_PROBES, *ROLE_PROBES]
+    return [DEMO_EPISODE, *UNUSUAL_PROBES, *ROLE_PROBES, *RELATIONAL_PROBES]
 
 
 FROZEN_KEYS = {episode_key(ep) for ep in frozen_episodes()}

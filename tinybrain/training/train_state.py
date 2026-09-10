@@ -115,6 +115,8 @@ def train(args: argparse.Namespace) -> dict:
         inner_steps=args.inner_steps,
         n_slots=getattr(args, "n_slots", 1),
         slot_dim=getattr(args, "slot_dim", 32),
+        n_components=getattr(args, "n_components", 1),
+        component_dim=getattr(args, "component_dim", 32),
     )
     model = SemanticStateModel(config).to(device)
     param_count = model.parameter_count()
@@ -125,6 +127,7 @@ def train(args: argparse.Namespace) -> dict:
         seed=args.seed,
         stages=tuple(range(1, args.max_stage + 1)),
         max_answer=args.max_answer,
+        symmetric=getattr(args, "symmetric", False),
     )
     held = generate_curriculum(
         max(40, args.per_stage // 4),
@@ -132,6 +135,7 @@ def train(args: argparse.Namespace) -> dict:
         seed=args.seed + 7919,
         stages=tuple(range(1, args.max_stage + 1)),
         max_answer=args.max_answer,
+        symmetric=False,
     )
     by_stage: dict[int, list[StateEpisode]] = defaultdict(list)
     for ep in train_all:
@@ -143,7 +147,9 @@ def train(args: argparse.Namespace) -> dict:
     print(
         f"device: {device} | params: {param_count} ({param_mb:.4f} MB) | "
         f"train: {len(train_all)} | held-out: {len(held)} | "
-        f"semantic={config.semantic_dim} state={config.state_dim} inner={config.inner_steps}"
+        f"semantic={config.semantic_dim} state={config.state_dim} inner={config.inner_steps} "
+        f"slots={config.n_slots} components={config.n_components} "
+        f"symmetric={getattr(args, 'symmetric', False)}"
     )
 
     epoch_log = []
@@ -271,6 +277,9 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--max-stage", type=int, default=6)
     ap.add_argument("--n-slots", type=int, default=1)
     ap.add_argument("--slot-dim", type=int, default=32)
+    ap.add_argument("--n-components", type=int, default=1)
+    ap.add_argument("--component-dim", type=int, default=32)
+    ap.add_argument("--symmetric", action="store_true")
     ap.add_argument("--output", type=Path, required=True)
     return ap
 

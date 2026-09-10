@@ -22,6 +22,8 @@ htmlcov/
 
 experiments/sweep_models/
 experiments/multislot_models/
+experiments/relational_models/
+experiments/roleaux_models/
 
 # Local runtime artifacts
 demo_memory.json

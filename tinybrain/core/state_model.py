@@ -5,6 +5,11 @@ from dataclasses import asdict, dataclass
 import torch
 from torch import nn
 
+from tinybrain.core.relational import (
+    RelationalDecomposer,
+    RelationalWorkingMemory,
+    collapse_metrics,
+)
 from tinybrain.core.semantic import encode_text_batch
 from tinybrain.core.slot_memory import MultiSlotMemory
 from tinybrain.metrics import model_parameter_mb
@@ -22,6 +27,8 @@ class StateModelConfig:
     max_bytes: int = 192
     n_slots: int = 1
     slot_dim: int = 32
+    n_components: int = 1
+    component_dim: int = 32
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -58,6 +65,19 @@ class StateSentenceEncoder(nn.Module):
         _, hidden = self.rnn(packed)
         merged = torch.cat([hidden[-2], hidden[-1]], dim=-1)
         return self.projection(merged)
+
+    def forward_sequence(
+        self, byte_ids: torch.Tensor, lengths: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        x = self.embedding(byte_ids)
+        packed = nn.utils.rnn.pack_padded_sequence(
+            x, lengths.cpu(), batch_first=True, enforce_sorted=False
+        )
+        packed_out, _ = self.rnn(packed)
+        seq, _ = nn.utils.rnn.pad_packed_sequence(packed_out, batch_first=True)
+        max_len = seq.size(1)
+        mask = torch.arange(max_len, device=byte_ids.device).unsqueeze(0) < lengths.unsqueeze(1)
+        return seq, mask
 
 
 class WorkingMemoryCell(nn.Module):
@@ -118,19 +138,48 @@ class SemanticStateModel(nn.Module):
             raise ValueError("inner_steps must be >= 1")
         if cfg.n_slots < 1:
             raise ValueError("n_slots must be >= 1")
+        if cfg.n_components < 1:
+            raise ValueError("n_components must be >= 1")
+        if cfg.n_components > 1 and cfg.n_slots > 1:
+            raise ValueError("n_components>1 cannot be combined with n_slots>1")
         self.use_slots = cfg.n_slots > 1
-        read_dim = cfg.slot_dim if self.use_slots else cfg.state_dim
+        self.use_relational = cfg.n_components > 1
+        if self.use_relational:
+            read_dim = cfg.component_dim
+        elif self.use_slots:
+            read_dim = cfg.slot_dim
+        else:
+            read_dim = cfg.state_dim
         self.encoder = StateSentenceEncoder(
             cfg.embed_dim, cfg.encoder_hidden, cfg.semantic_dim
         )
-        if self.use_slots:
+        self.relational = None
+        if self.use_relational:
+            encoder_dim = cfg.encoder_hidden * 2
+            self.relational = RelationalDecomposer(
+                encoder_dim, cfg.n_components, cfg.component_dim
+            )
+            self.memory = RelationalWorkingMemory(
+                cfg.n_components, cfg.component_dim, cfg.semantic_dim
+            )
+            self.init_components = nn.Parameter(
+                0.02 * torch.randn(cfg.n_components, cfg.component_dim)
+            )
+            self.init_slots = None
+            self.init_state = None
+            mention_in = cfg.component_dim
+        elif self.use_slots:
             self.memory = MultiSlotMemory(cfg.semantic_dim, cfg.slot_dim, cfg.n_slots)
             self.init_slots = nn.Parameter(0.02 * torch.randn(cfg.n_slots, cfg.slot_dim))
             self.init_state = None
+            self.init_components = None
+            mention_in = cfg.semantic_dim
         else:
             self.memory = WorkingMemoryCell(cfg.semantic_dim, cfg.state_dim)
             self.init_state = nn.Parameter(torch.zeros(cfg.state_dim))
             self.init_slots = None
+            self.init_components = None
+            mention_in = cfg.semantic_dim
         self.answer_head = AnswerHead(
             cfg.semantic_dim,
             read_dim,
@@ -139,7 +188,7 @@ class SemanticStateModel(nn.Module):
         )
         # Auxiliary: read the quantity mentioned in an event. This is not a
         # "gave" rule; it only pressures the encoder to extract numbers.
-        self.mention_head = nn.Linear(cfg.semantic_dim, cfg.max_answer + 1)
+        self.mention_head = nn.Linear(mention_in, cfg.max_answer + 1)
 
     def _device(self) -> torch.device:
         return next(self.parameters()).device
@@ -148,6 +197,11 @@ class SemanticStateModel(nn.Module):
         device = self._device()
         ids, lengths = encode_text_batch(texts, device, max_bytes=self.config.max_bytes)
         return self.encoder(ids, lengths)
+
+    def encode_sequences(self, texts: list[str]) -> tuple[torch.Tensor, torch.Tensor]:
+        device = self._device()
+        ids, lengths = encode_text_batch(texts, device, max_bytes=self.config.max_bytes)
+        return self.encoder.forward_sequence(ids, lengths)
 
     def forward(
         self,
@@ -170,8 +224,14 @@ class SemanticStateModel(nn.Module):
         mention_steps: list[torch.Tensor] = []
         write_attn_steps: list[list[float]] = []
         update_delta_steps: list[list[float]] = []
+        token_attn_steps: list[list[list[float]]] = []
+        relation_attn_steps: list[list[list[float]]] = []
+        component_cosine_steps: list[float] = []
+        last_memory = None
 
-        if self.use_slots:
+        if self.use_relational:
+            memory = self.init_components.unsqueeze(0).expand(batch_size, -1, -1).contiguous()
+        elif self.use_slots:
             slots = self.init_slots.unsqueeze(0).expand(batch_size, -1, -1).contiguous()
         else:
             state = self.init_state.unsqueeze(0).expand(batch_size, -1).contiguous()
@@ -186,33 +246,64 @@ class SemanticStateModel(nn.Module):
                 else:
                     step_texts.append("")
                     mask_vals.append(0.0)
-            semantic = self.encode_texts(step_texts)
-            mention_steps.append(self.mention_head(semantic))
-            mask = torch.tensor(mask_vals, device=device, dtype=semantic.dtype)
-            if self.use_slots:
-                updated = slots
+            if self.use_relational:
+                seq, token_mask = self.encode_sequences(step_texts)
+                components, token_attn = self.relational.decompose(seq, token_mask)
+                related, rel_attn = self.relational.relate(components)
+                mention_feat = related.mean(dim=1)
+                mention_steps.append(self.mention_head(mention_feat))
+                mask = torch.tensor(mask_vals, device=device, dtype=related.dtype)
+                updated = memory
                 weights = None
                 delta = None
                 for _ in range(inner):
-                    updated, weights, delta = self.memory.write(updated, semantic)
-                slots = updated * mask.view(batch_size, 1, 1) + slots * (1.0 - mask.view(batch_size, 1, 1))
+                    updated, weights, delta = self.memory.write(updated, related)
+                memory = updated * mask.view(batch_size, 1, 1) + memory * (
+                    1.0 - mask.view(batch_size, 1, 1)
+                )
+                last_memory = memory
                 if return_trace:
-                    write_attn_steps.append(weights[0].detach().cpu().tolist())
+                    write_attn_steps.append(weights[0].mean(dim=0).detach().cpu().tolist())
                     update_delta_steps.append(delta[0].detach().cpu().tolist())
+                    token_attn_steps.append(token_attn[0].detach().cpu().tolist())
+                    relation_attn_steps.append(rel_attn[0].detach().cpu().tolist())
+                    component_cosine_steps.append(
+                        float(collapse_metrics(components=related[:1])["mean_pairwise_cosine"])
+                    )
             else:
-                updated = state
-                for _ in range(inner):
-                    updated = self.memory(semantic, updated)
-                state = updated * mask.unsqueeze(-1) + state * (1.0 - mask.unsqueeze(-1))
+                semantic = self.encode_texts(step_texts)
+                mention_steps.append(self.mention_head(semantic))
+                mask = torch.tensor(mask_vals, device=device, dtype=semantic.dtype)
+                if self.use_slots:
+                    updated = slots
+                    weights = None
+                    delta = None
+                    for _ in range(inner):
+                        updated, weights, delta = self.memory.write(updated, semantic)
+                    slots = updated * mask.view(batch_size, 1, 1) + slots * (
+                        1.0 - mask.view(batch_size, 1, 1)
+                    )
+                    if return_trace:
+                        write_attn_steps.append(weights[0].detach().cpu().tolist())
+                        update_delta_steps.append(delta[0].detach().cpu().tolist())
+                else:
+                    updated = state
+                    for _ in range(inner):
+                        updated = self.memory(semantic, updated)
+                    state = updated * mask.unsqueeze(-1) + state * (1.0 - mask.unsqueeze(-1))
 
         question_sem = self.encode_texts(questions)
-        if self.use_slots:
+        question_attn = None
+        if self.use_relational:
+            read_weights, readout = self.memory.read(memory, question_sem)
+            logits = self.answer_head(question_sem, readout)
+            question_attn = read_weights[0].detach().cpu().tolist()
+        elif self.use_slots:
             read_weights, readout = self.memory.read(slots, question_sem)
             logits = self.answer_head(question_sem, readout)
             question_attn = read_weights[0].detach().cpu().tolist()
         else:
             logits = self.answer_head(question_sem, state)
-            question_attn = None
         n_events = torch.tensor(
             [len(events) for events in events_batch],
             device=device,
@@ -224,10 +315,26 @@ class SemanticStateModel(nn.Module):
             return logits, n_updates, mention_logits
         trace = {
             "n_slots": self.config.n_slots if self.use_slots else 1,
+            "n_components": self.config.n_components if self.use_relational else 1,
             "event_write_attention": write_attn_steps,
             "event_update_delta": update_delta_steps,
             "question_read_attention": question_attn,
+            "event_token_attention": token_attn_steps,
+            "event_relation_attention": relation_attn_steps,
+            "event_component_cosine": component_cosine_steps,
         }
+        if self.use_relational and last_memory is not None:
+            read_w = None
+            if question_attn is not None:
+                read_w = torch.tensor([question_attn], device=last_memory.device)
+            write_t = None
+            if write_attn_steps:
+                write_t = torch.tensor([write_attn_steps[-1]], device=last_memory.device)
+            trace["collapse"] = collapse_metrics(
+                components=last_memory[:1],
+                write_attn=write_t.unsqueeze(1) if write_t is not None else None,
+                read_attn=read_w,
+            )
         return logits, n_updates, mention_logits, trace
 
     @torch.inference_mode()
