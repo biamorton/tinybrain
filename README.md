@@ -135,7 +135,9 @@ Bundled model: **146,850 parameters (0.56 MB)**.
 | Stage 5 sequential transfers (held-out) | 7.50% |
 | Bob / Rebekah permanent benchmark | **FAIL** (predicted 3, expected 7) |
 
-This is **not** solved. It is useful evidence. See [EXPERIMENTS.md](EXPERIMENTS.md).
+This is **not** solved. It is useful evidence. See [EXPERIMENTS.md](EXPERIMENTS.md) for v0.3 and the v0.3A compute-vs-size sweep.
+
+v0.3A (Stages 1–3 only, 12 configs): extra `inner_steps` did **not** reliably replace a larger state. Role-reversal remains the main transfer error. Bob/Rebekah still fails on several configs (predicted 3). Sweep: `tinybrain sweep-state`.
 
 ### Current limitations
 

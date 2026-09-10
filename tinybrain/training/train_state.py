@@ -31,19 +31,21 @@ def collate(batch: list[StateEpisode]):
     return batch
 
 
-def stages_for_epoch(epoch: int, total_epochs: int) -> tuple[int, ...]:
+def stages_for_epoch(epoch: int, total_epochs: int, max_stage: int = 6) -> tuple[int, ...]:
     frac = epoch / max(total_epochs, 1)
     if frac <= 0.40:
-        return (1,)
-    if frac <= 0.55:
-        return (1, 2)
-    if frac <= 0.68:
-        return (1, 2, 3)
-    if frac <= 0.80:
-        return (1, 2, 3, 4)
-    if frac <= 0.90:
-        return (1, 2, 3, 4, 5)
-    return (1, 2, 3, 4, 5, 6)
+        allowed = (1,)
+    elif frac <= 0.55:
+        allowed = (1, 2)
+    elif frac <= 0.68:
+        allowed = (1, 2, 3)
+    elif frac <= 0.80:
+        allowed = (1, 2, 3, 4)
+    elif frac <= 0.90:
+        allowed = (1, 2, 3, 4, 5)
+    else:
+        allowed = (1, 2, 3, 4, 5, 6)
+    return tuple(stage for stage in allowed if stage <= max_stage)
 
 
 def mention_targets(batch: list[StateEpisode], max_events: int, max_answer: int, device: torch.device) -> torch.Tensor:
@@ -116,12 +118,17 @@ def train(args: argparse.Namespace) -> dict:
     param_count = model.parameter_count()
     param_mb = model.parameter_mb()
     train_all = generate_curriculum(
-        args.per_stage, held_out=False, seed=args.seed, max_answer=args.max_answer
+        args.per_stage,
+        held_out=False,
+        seed=args.seed,
+        stages=tuple(range(1, args.max_stage + 1)),
+        max_answer=args.max_answer,
     )
     held = generate_curriculum(
         max(40, args.per_stage // 4),
         held_out=True,
         seed=args.seed + 7919,
+        stages=tuple(range(1, args.max_stage + 1)),
         max_answer=args.max_answer,
     )
     by_stage: dict[int, list[StateEpisode]] = defaultdict(list)
@@ -140,7 +147,7 @@ def train(args: argparse.Namespace) -> dict:
     epoch_log = []
     started = time.perf_counter()
     for epoch in range(1, args.epochs + 1):
-        allowed = stages_for_epoch(epoch, args.epochs)
+        allowed = stages_for_epoch(epoch, args.epochs, max_stage=args.max_stage)
         pool = []
         for stage in allowed:
             pool.extend(by_stage[stage])
@@ -214,6 +221,7 @@ def train(args: argparse.Namespace) -> dict:
             "per_stage": args.per_stage,
             "lr": args.lr,
             "seed": args.seed,
+            "max_stage": args.max_stage,
             "rss_mb": current_rss_mb(),
             "final_heldout_acc": final_held["accuracy"],
             "final_heldout": final_held,
@@ -258,6 +266,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--max-answer", type=int, default=64)
     ap.add_argument("--lr", type=float, default=2e-3)
     ap.add_argument("--seed", type=int, default=1337)
+    ap.add_argument("--max-stage", type=int, default=6)
     ap.add_argument("--output", type=Path, required=True)
     return ap
 

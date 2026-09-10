@@ -184,6 +184,10 @@ class StateEpisode:
     mentioned_numbers: list[int] = field(default_factory=list)
     initial_qty: int | None = None
     compositional: bool = False
+    transfer_qty: int | None = None
+    transfer_direction: str | None = None
+    other_qty: int | None = None
+    probe_family: str | None = None
 
 
 class World:
@@ -322,6 +326,9 @@ def generate_episode(
     target_name = rng.choice(names)
     target_obj = rng.choice(obj_list)
     initial_qty: int | None = None
+    transfer_qty: int | None = None
+    transfer_direction: str | None = None
+    other_qty: int | None = None
 
     if stage == 1:
         n = rng.randint(1, 15)
@@ -335,6 +342,9 @@ def generate_episode(
         possess(target_name, target_obj, n)
         initial_qty = n
         transfer(giver, target_name, target_obj, k)
+        transfer_qty = k
+        transfer_direction = "in"
+        other_qty = world.get(giver, target_obj)
 
     elif stage == 3:
         receiver = rng.choice([n for n in names if n != target_name])
@@ -343,6 +353,9 @@ def generate_episode(
         possess(target_name, target_obj, n)
         initial_qty = n
         transfer(target_name, receiver, target_obj, k)
+        transfer_qty = k
+        transfer_direction = "out"
+        other_qty = world.get(receiver, target_obj)
 
     elif stage == 4:
         n = rng.randint(2, 12)
@@ -403,6 +416,9 @@ def generate_episode(
             mentioned_numbers=mentioned,
             initial_qty=initial_qty,
             compositional=compositional,
+            transfer_qty=inner.transfer_qty,
+            transfer_direction=inner.transfer_direction,
+            other_qty=inner.other_qty,
         )
 
     answer = world.get(target_name, target_obj)
@@ -421,6 +437,9 @@ def generate_episode(
         mentioned_numbers=mentioned,
         initial_qty=initial_qty,
         compositional=compositional,
+        transfer_qty=transfer_qty,
+        transfer_direction=transfer_direction,
+        other_qty=other_qty,
     )
 
 
@@ -450,6 +469,8 @@ def generate_curriculum(
             except ValueError:
                 continue
             if 0 <= ep.answer <= max_answer and ep.events:
+                if is_frozen_episode(ep):
+                    continue
                 episodes.append(ep)
                 made += 1
         if made < per_stage:
@@ -477,6 +498,10 @@ DEMO_EPISODE = StateEpisode(
     target_object="crayons",
     mentioned_numbers=[5, 2],
     initial_qty=5,
+    transfer_qty=2,
+    transfer_direction="in",
+    other_qty=0,
+    probe_family="demo",
 )
 
 UNUSUAL_PROBES = [
@@ -494,6 +519,10 @@ UNUSUAL_PROBES = [
         target_object="crayons",
         mentioned_numbers=[5, 2],
         initial_qty=5,
+        transfer_qty=2,
+        transfer_direction="in",
+        other_qty=0,
+        probe_family="unusual",
     ),
     StateEpisode(
         events=[
@@ -509,6 +538,10 @@ UNUSUAL_PROBES = [
         target_object="stickers",
         mentioned_numbers=[12, 3],
         initial_qty=12,
+        transfer_qty=3,
+        transfer_direction="out",
+        other_qty=3,
+        probe_family="unusual",
     ),
     StateEpisode(
         events=[
@@ -525,5 +558,221 @@ UNUSUAL_PROBES = [
         target_object="books",
         mentioned_numbers=[4, 6, 8],
         initial_qty=4,
+        transfer_qty=6,
+        transfer_direction="in",
+        other_qty=8,
+        probe_family="unusual",
     ),
 ]
+
+
+def _role(
+    events: list[str],
+    question: str,
+    answer: int,
+    *,
+    target_name: str,
+    target_object: str,
+    mentioned: list[int],
+    initial: int,
+    transfer_qty: int,
+    direction: str,
+    other_qty: int,
+    family: str,
+) -> StateEpisode:
+    return StateEpisode(
+        events=events,
+        question=question,
+        answer=answer,
+        stage=98,
+        held_out=True,
+        n_updates=len(events),
+        target_name=target_name,
+        target_object=target_object,
+        mentioned_numbers=mentioned,
+        initial_qty=initial,
+        transfer_qty=transfer_qty,
+        transfer_direction=direction,
+        other_qty=other_qty,
+        probe_family=family,
+    )
+
+
+# Frozen source/recipient probes. Train-like wording, never in the training pool.
+ROLE_PROBES = [
+    _role(
+        ["Maya has 8 stickers.", "Liam gave Maya 3 stickers."],
+        "How many stickers does Maya have?",
+        11,
+        target_name="Maya",
+        target_object="stickers",
+        mentioned=[8, 3],
+        initial=8,
+        transfer_qty=3,
+        direction="in",
+        other_qty=0,
+        family="A",
+    ),
+    _role(
+        ["Priya owns 6 books.", "Sam handed Priya 4 books."],
+        "How many books does Priya have?",
+        10,
+        target_name="Priya",
+        target_object="books",
+        mentioned=[6, 4],
+        initial=6,
+        transfer_qty=4,
+        direction="in",
+        other_qty=0,
+        family="A",
+    ),
+    _role(
+        ["Diego currently has 10 marbles.", "Nora gave Diego 2 marbles."],
+        "How many marbles does Diego have?",
+        12,
+        target_name="Diego",
+        target_object="marbles",
+        mentioned=[10, 2],
+        initial=10,
+        transfer_qty=2,
+        direction="in",
+        other_qty=0,
+        family="A",
+    ),
+    _role(
+        ["Bob has 5 crayons.", "Bob gave Rebekah 2 crayons."],
+        "How many crayons does Bob have?",
+        3,
+        target_name="Bob",
+        target_object="crayons",
+        mentioned=[5, 2],
+        initial=5,
+        transfer_qty=2,
+        direction="out",
+        other_qty=2,
+        family="B",
+    ),
+    _role(
+        ["Maya owns 9 stickers.", "Maya gave Carlos 4 stickers."],
+        "How many stickers does Maya have?",
+        5,
+        target_name="Maya",
+        target_object="stickers",
+        mentioned=[9, 4],
+        initial=9,
+        transfer_qty=4,
+        direction="out",
+        other_qty=4,
+        family="B",
+    ),
+    _role(
+        ["Alice keeps 7 apples.", "Alice handed Jenny 3 apples."],
+        "How many apples does Alice have?",
+        4,
+        target_name="Alice",
+        target_object="apples",
+        mentioned=[7, 3],
+        initial=7,
+        transfer_qty=3,
+        direction="out",
+        other_qty=3,
+        family="B",
+    ),
+    _role(
+        ["Bob has 5 crayons.", "Bob gave Rebekah 2 crayons."],
+        "How many crayons does Rebekah have?",
+        2,
+        target_name="Rebekah",
+        target_object="crayons",
+        mentioned=[5, 2],
+        initial=0,
+        transfer_qty=2,
+        direction="in",
+        other_qty=3,
+        family="C",
+    ),
+    _role(
+        ["Maya owns 9 stickers.", "Maya gave Carlos 4 stickers."],
+        "How many stickers does Carlos have?",
+        4,
+        target_name="Carlos",
+        target_object="stickers",
+        mentioned=[9, 4],
+        initial=0,
+        transfer_qty=4,
+        direction="in",
+        other_qty=5,
+        family="C",
+    ),
+    _role(
+        ["Alice keeps 7 apples.", "Alice handed Jenny 3 apples."],
+        "How many apples does Jenny have?",
+        3,
+        target_name="Jenny",
+        target_object="apples",
+        mentioned=[7, 3],
+        initial=0,
+        transfer_qty=3,
+        direction="in",
+        other_qty=4,
+        family="C",
+    ),
+    _role(
+        ["Bob has 5 crayons.", "Rebekah has 4 crayons.", "Rebekah gave Bob 2 crayons."],
+        "How many crayons does Rebekah have?",
+        2,
+        target_name="Rebekah",
+        target_object="crayons",
+        mentioned=[5, 4, 2],
+        initial=4,
+        transfer_qty=2,
+        direction="out",
+        other_qty=7,
+        family="D",
+    ),
+    _role(
+        ["Sam owns 6 coins.", "Priya has 8 coins.", "Priya gave Sam 3 coins."],
+        "How many coins does Priya have?",
+        5,
+        target_name="Priya",
+        target_object="coins",
+        mentioned=[6, 8, 3],
+        initial=8,
+        transfer_qty=3,
+        direction="out",
+        other_qty=9,
+        family="D",
+    ),
+    _role(
+        ["Owen has 10 pencils.", "Zoe has 5 pencils.", "Zoe handed Owen 1 pencil."],
+        "How many pencils does Zoe have?",
+        4,
+        target_name="Zoe",
+        target_object="pencils",
+        mentioned=[10, 5, 1],
+        initial=5,
+        transfer_qty=1,
+        direction="out",
+        other_qty=11,
+        family="D",
+    ),
+]
+
+
+def episode_key(episode: StateEpisode) -> tuple[tuple[str, ...], str]:
+    return (tuple(episode.events), episode.question)
+
+
+def frozen_episodes() -> list[StateEpisode]:
+    return [DEMO_EPISODE, *UNUSUAL_PROBES, *ROLE_PROBES]
+
+
+FROZEN_KEYS = {episode_key(ep) for ep in frozen_episodes()}
+
+
+def frozen_keys() -> set[tuple[tuple[str, ...], str]]:
+    return FROZEN_KEYS
+
+
+def is_frozen_episode(episode: StateEpisode) -> bool:
+    return episode_key(episode) in FROZEN_KEYS

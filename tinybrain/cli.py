@@ -50,6 +50,7 @@ def parser() -> argparse.ArgumentParser:
     train_state.add_argument("--max-answer", type=int, default=64)
     train_state.add_argument("--lr", type=float, default=2e-3)
     train_state.add_argument("--seed", type=int, default=1337)
+    train_state.add_argument("--max-stage", type=int, default=6)
     train_state.add_argument("--output", type=Path, default=DEFAULT_STATE_MODEL)
 
     bench_state = s.add_parser("benchmark-state")
@@ -59,6 +60,16 @@ def parser() -> argparse.ArgumentParser:
 
     demo_state = s.add_parser("state-demo")
     demo_state.add_argument("--model", type=Path, default=DEFAULT_STATE_MODEL)
+
+    sweep = s.add_parser("sweep-state")
+    sweep.add_argument("--epochs", type=int, default=20)
+    sweep.add_argument("--per-stage", type=int, default=600)
+    sweep.add_argument("--batch-size", type=int, default=32)
+    sweep.add_argument("--seed", type=int, default=1337)
+    sweep.add_argument("--state-dims", type=int, nargs="+", default=[32, 64, 128, 256])
+    sweep.add_argument("--inner-steps", type=int, nargs="+", default=[1, 2, 4])
+    sweep.add_argument("--extra-seeds", action="store_true")
+    sweep.add_argument("--extra-top", type=int, default=3)
     return p
 
 
@@ -107,10 +118,38 @@ def main() -> None:
             str(args.lr),
             "--seed",
             str(args.seed),
+            "--max-stage",
+            str(args.max_stage),
             "--output",
             str(args.output),
         ]
         raise SystemExit(subprocess.call(cmd))
+
+    if args.command == "sweep-state":
+        from tinybrain.eval.state_sweep import run_sweep
+        from tinybrain.eval.state_sweep import build_parser as sweep_parser
+
+        sweep_args = sweep_parser().parse_args(
+            [
+                "--epochs",
+                str(args.epochs),
+                "--per-stage",
+                str(args.per_stage),
+                "--batch-size",
+                str(args.batch_size),
+                "--seed",
+                str(args.seed),
+                "--state-dims",
+                *[str(x) for x in args.state_dims],
+                "--inner-steps",
+                *[str(x) for x in args.inner_steps],
+                "--extra-top",
+                str(args.extra_top),
+            ]
+            + (["--extra-seeds"] if args.extra_seeds else [])
+        )
+        run_sweep(sweep_args)
+        return
 
     if args.command == "benchmark-state":
         if not args.model.exists():

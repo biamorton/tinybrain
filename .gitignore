@@ -20,6 +20,8 @@ build/
 .coverage
 htmlcov/
 
+experiments/sweep_models/
+
 # Local runtime artifacts
 demo_memory.json
 *.log

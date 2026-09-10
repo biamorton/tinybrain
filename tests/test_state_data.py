@@ -8,6 +8,7 @@ from tinybrain.training.state_data import (
     NAMES,
     OBJECTS,
     PRONOUN_TEMPLATES,
+    ROLE_PROBES,
     TRAIN_TEMPLATES,
     UNUSUAL_PROBES,
     World,
@@ -15,6 +16,7 @@ from tinybrain.training.state_data import (
     contains_forbidden_snippet,
     generate_curriculum,
     generate_episode,
+    is_frozen_episode,
 )
 import random
 
@@ -77,10 +79,13 @@ def test_stage_structures():
     s2 = generate_episode(2, rng)
     assert len(s2.events) == 2
     assert s2.answer == s2.initial_qty + s2.mentioned_numbers[1]
+    assert s2.transfer_direction == "in"
+    assert s2.transfer_qty == s2.mentioned_numbers[1]
 
     s3 = generate_episode(3, rng)
     assert len(s3.events) == 2
     assert s3.answer == s3.initial_qty - s3.mentioned_numbers[1]
+    assert s3.transfer_direction == "out"
 
     s4 = generate_episode(4, rng)
     assert len(s4.events) >= 2
@@ -97,6 +102,23 @@ def test_demo_episode_is_ordinary_stage2_shape():
     assert DEMO_EPISODE.n_updates == 2
     assert DEMO_EPISODE.events[0] == "Bob owns 5 crayons."
     assert "gave" in DEMO_EPISODE.events[1]
+    assert DEMO_EPISODE.transfer_direction == "in"
+    assert DEMO_EPISODE.transfer_qty == 2
+
+
+def test_curriculum_excludes_frozen_episodes():
+    train = generate_curriculum(80, held_out=False, seed=101, stages=(1, 2, 3))
+    assert not any(is_frozen_episode(ep) for ep in train)
+    demo_key = (tuple(DEMO_EPISODE.events), DEMO_EPISODE.question)
+    assert all((tuple(ep.events), ep.question) != demo_key for ep in train)
+    role_keys = {(tuple(ep.events), ep.question) for ep in ROLE_PROBES}
+    assert all((tuple(ep.events), ep.question) not in role_keys for ep in train)
+
+
+def test_role_probes_are_not_training_templates_as_full_episodes():
+    for probe in ROLE_PROBES:
+        blob = " ".join(probe.events + [probe.question])
+        assert not contains_forbidden_snippet(blob) or probe.probe_family
 
 
 def test_compositional_names_do_not_overlap_training_names():

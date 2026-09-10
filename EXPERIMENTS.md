@@ -131,16 +131,109 @@ Maya's 12 is the initial quantity (ignored transfer). Priya's 8 is Diego's distr
 
 Success on this synthetic curriculum would still **not** mean general language understanding.
 
-## Recommended next experiment (not v0.4)
+The compute-vs-size sweep below was the v0.3 follow-up. It is **not** v0.4.
 
-Do not jump to free-form dialogue, pronouns as the main bet, or wrapping an LLM.
+---
 
-The evidence says the encoder can read quantities. The failure is **learned state update and multi-fact binding**.
+## v0.3A — Recurrent compute vs state size (Stages 1–3)
 
-Recommended v0.3-line follow-up, in order:
+Research question:
 
-1. **Compute vs size sweep on Stages 2–3 only**, until in-distribution transfer is clearly saturated. Compare `inner_steps` 1/2/4 at 64-d against `state_dim` 32/64/128/256 with `inner_steps=1`. Same held-out templates. This answers the secondary research question with a task the 64-d model can at least partially learn.
-2. If extra inner steps do not fix giver/recipient errors, test a **learned multi-slot / associative working memory** that still reuses one update module per event. Still no `gave` rules.
-3. Keep the Bob/Rebekah item and the unusual probes frozen. If they start passing, it should be because the update operator generalized, not because those strings entered training.
+> Can additional recurrent computation compensate for a smaller latent working state when learning possession-transfer semantics?
 
-v0.2 remains the intent-routing baseline. Do not spend the next iteration only improving that classifier.
+Architecture unchanged: one shared encoder, one shared working-memory cell, quantity head. Stages 4–6 were withheld so transfer/role learning could be measured without long-chain collapse. Semantic dim stayed at 64. Bob/Rebekah, unusual probes, and held-out templates were frozen. The exact Bob/Rebekah episode was excluded from training.
+
+### Protocol
+
+- Grid: `state_dim ∈ {32,64,128,256}` × `inner_steps ∈ {1,2,4}` (12 configs)
+- Same optimizer (AdamW 2e-3), 20 epochs, 600 episodes/stage, stages 1–3 only
+- Primary seed 1337 for all 12; extra seeds 2024 and 4242 on the top 3 configs
+- Results: `experiments/state_v03a_sweep.csv` and `.json`
+- Sweep checkpoints are local-only (`experiments/sweep_models/`, gitignored)
+
+```powershell
+tinybrain sweep-state --extra-seeds
+```
+
+### Seed 1337, sorted by held-out Stage 2+3 transfer
+
+| state | inner | MB | ms/ep | S1 HO | S2 HO | S3 HO | S2+3 HO | Bob | unusual | role | xfer/MB |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 256 | 4 | 2.091 | 4.00 | 88.8 | 56.2 | 75.0 | **65.62** | 7 PASS | 2/3 | 16.7 | 0.314 |
+| 256 | 1 | 2.091 | 2.53 | 81.2 | 53.8 | 61.2 | 57.50 | 7 PASS | 3/3 | 33.3 | 0.275 |
+| 32 | 1 | 0.469 | 2.43 | 93.8 | 56.2 | 57.5 | 56.88 | 3 FAIL | 1/3 | 25.0 | **1.212** |
+| 64 | 2 | 0.560 | 2.05 | 86.2 | 55.0 | 55.0 | 55.00 | 3 FAIL | 1/3 | 33.3 | 0.982 |
+| 32 | 2 | 0.469 | 1.56 | 80.0 | 50.0 | 55.0 | 52.50 | 7 PASS | 2/3 | 33.3 | 1.119 |
+| 128 | 2 | 0.883 | 3.12 | 82.5 | 52.5 | 50.0 | 51.25 | 3 FAIL | 1/3 | 16.7 | 0.580 |
+| 32 | 4 | 0.469 | 1.49 | 81.2 | 41.2 | 58.8 | 50.00 | 3 FAIL | 0/3 | 33.3 | 1.066 |
+| 256 | 2 | 2.091 | 2.82 | 87.5 | 47.5 | 52.5 | 50.00 | 7 PASS | 0/3 | 25.0 | 0.239 |
+| 64 | 4 | 0.560 | 2.09 | 82.5 | 43.8 | 55.0 | 49.38 | 3 FAIL | 1/3 | 33.3 | 0.881 |
+| 128 | 4 | 0.883 | 3.08 | 93.8 | 48.8 | 47.5 | 48.12 | 3 FAIL | 0/3 | 25.0 | 0.545 |
+| 64 | 1 | 0.560 | 2.32 | 88.8 | 41.2 | 52.5 | 46.88 | 7 PASS | 2/3 | 25.0 | 0.837 |
+| 128 | 1 | 0.883 | 2.61 | 76.2 | 38.8 | 55.0 | 46.88 | 3 FAIL | 1/3 | 33.3 | 0.531 |
+
+In-distribution Stage 1 is 100% for every config. Mean recurrent updates = `inner_steps × mean events` (~1.67 events).
+
+### Bob / Rebekah (frozen)
+
+Same strings as v0.3. Predicted **3** is reversed transfer (`5-2`). PASS means predicted 7.
+
+| state×inner (seed 1337) | predicted | error |
+| --- | ---: | --- |
+| 32×1 | 3 | reversed_transfer |
+| 32×2 | 7 | exact |
+| 32×4 | 3 | reversed_transfer |
+| 64×1 | 7 | exact |
+| 64×2 | 3 | reversed_transfer |
+| 64×4 | 3 | reversed_transfer |
+| 128×1 | 3 | reversed_transfer |
+| 128×2 | 3 | reversed_transfer |
+| 128×4 | 3 | reversed_transfer |
+| 256×1 | 7 | exact |
+| 256×2 | 7 | exact |
+| 256×4 | 7 | exact |
+
+### Role probes (frozen, train-like wording)
+
+Families: A incoming/ask recipient; B outgoing/ask giver; C outgoing/ask recipient who started at 0; D two initialized people, ask the giver.
+
+On seed 1337, **C and D are essentially unsolved** (usually 0/3). A and B sometimes reach 2/3 or 3/3. The network can apply add-or-subtract to a salient person; it does not reliably answer about the other role.
+
+### Transfer error modes (held-out Stage 2+3, seed 1337)
+
+The dominant miss is **reversed_transfer** (~27–45 of 160 items per run). Ignored transfers are rare. That matches the original Bob `7→3` error.
+
+### Seed variance (top 3 configs, 3 seeds)
+
+| config | 1337 | 2024 | 4242 | mean S2+3 HO |
+| --- | ---: | ---: | ---: | ---: |
+| 256×4 | 65.62 | 55.00 | 53.75 | 58.1 |
+| 256×1 | 57.50 | 59.38 | 48.12 | 55.0 |
+| 32×1 | 56.88 | 40.00 | 43.12 | 46.7 |
+
+Spreads of 10–17 points. Bob also flips with seed (256×1 seed 2024 predicts 3; 32×1 seeds 2024/4242 predict 7).
+
+### Interpretation
+
+Averaging seed 1337 across widths:
+
+- inner 1 / 2 / 4 transfer: 52.0% / 52.2% / 53.3% — **no material compute gain**
+- state 32 / 64 / 128 / 256 transfer: 53.1% / 50.4% / 48.8% / 57.7% — 256 is the best peak, not a clean scaling curve
+
+**CASE A** (more inner steps help at fixed size): not supported. At 32-d, extra steps *hurt*.
+
+**CASE B** (larger state helps, compute does not): weakly, and only as a peak. 32×1 beat 64×1 and 128×1 on the same seed.
+
+**CASE C** (neither fixes role reversal): supported for the diagnostic that matters. Reversed transfer stays the modal error. Role C/D fail in every configuration.
+
+**CASE D** (seed variance): supported. Ranking 32 vs 256 by a single seed would be misleading.
+
+Decision: **do not treat extra recurrent steps as a substitute for a better state representation.** Do not treat 256-d as a solved transfer model. The single-vector state still does not implement queryable source/recipient bindings. That failure is stable across the grid; the accuracy numbers are not.
+
+### Next experiment (still not v0.4)
+
+Recommended: **learned multi-slot / associative working memory**, same encoder, same frozen probes. Still no `gave` rules.
+
+A secondary stability check (more seeds or a longer plateau on Stages 2–3) would be needed before claiming any size/compute ranking. It should not delay the role-binding experiment: C/D never worked here.
+
+v0.2 remains the intent-routing baseline.
