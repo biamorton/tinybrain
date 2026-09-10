@@ -397,6 +397,64 @@ Every relational seed: mean pairwise cosine **≈ 1.0**. All four components bec
 
 Do not treat relational decomposition as a success. The training-signal change is the more interesting result, and even that did not solve Bob/Rebekah or make C/D reliable.
 
-### Next
+v0.3D below tests whether auxiliary role supervision can teach the distinction that answer-only loss did not.
 
-v0.3D: keep the single-vector architecture (relational just copies one vector four times) and test whether **auxiliary role supervision** — training-only, not used at inference — can teach giver/recipient distinctions that answer-only loss does not.
+---
+
+## v0.3D — Auxiliary semantic role supervision
+
+Hypothesis:
+
+> Is this architecture unable to represent giver/recipient roles, or is final-answer loss too weak a teaching signal for a model this small?
+
+Training-only aux heads, from the simulator, predict:
+- role of the **questioned person** (`none` / `recipient` / `giver`)
+- transferred quantity
+
+Inference still takes raw text only. No `gave` rule, no role labels at test time.
+
+Architecture is the v0.3C **single-vector + symmetric questioning** control. Relational components were not reused: they had already collapsed to identical copies.
+
+A first smoke run produced `loss=nan` on stage-1 batches because transfer-quantity CE was computed on all-ignored targets. That run is **invalid** and was discarded. The loss was guarded; all numbers below are from the rerun.
+
+### Controlled comparison
+
+| | noaux (v0.3C single_sym) | role_aux |
+| --- | --- | --- |
+| memory | 32-d vector | 32-d vector |
+| symmetric questions | yes | yes |
+| aux heads | mention only | mention + role + transfer qty |
+| aux weight | — | 0.5 |
+| params | 122,978 (0.469 MB) | 129,574 (0.494 MB) |
+| seeds | 1337, 2024, 4242 | same |
+
+```powershell
+tinybrain compare-roleaux
+```
+
+Results: `experiments/state_v03d_roleaux.csv` and `.json`.
+
+### Results (primary: frozen C+D)
+
+| arch | seed | S1 HO | S2+3 HO | C | D | C+D | R probes | Bob | OOD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| noaux | 1337 | 70.0 | 13.8 | 33.3 | 66.7 | **50.0** | 12.5 | 3 | 0/3 |
+| noaux | 2024 | 77.5 | 20.6 | 0.0 | 33.3 | **16.7** | 37.5 | 3 | 1/3 |
+| noaux | 4242 | 72.5 | 30.0 | 33.3 | 33.3 | **33.3** | 25.0 | 3 | 1/3 |
+| role_aux | 1337 | 73.8 | 18.8 | 33.3 | 0.0 | **16.7** | 25.0 | 3 | 0/3 |
+| role_aux | 2024 | 96.3 | 28.1 | 0.0 | 0.0 | **0.0** | 25.0 | 3 | 0/3 |
+| role_aux | 4242 | 77.5 | 21.9 | 66.7 | 0.0 | **33.3** | 12.5 | 2 | 0/3 |
+
+Mean C+D: noaux **33.3%**, role_aux **16.7%**. Family D is **0/3 on every aux seed**. Bob is never 7.
+
+Auxiliary role supervision did **not** produce stable C/D generalization. It did not beat answer-only training on the same architecture.
+
+### Stop
+
+The current encoder + single-vector update appears unable to reliably bind elementary semantic roles at this scale, even when the simulator tells it who is giver/recipient during training.
+
+Do not make the model bigger. Do not add more slots or components. Do not add possession-transfer rules to inference.
+
+Recommended next hypothesis (not implemented): **query-side binding** — attend from the question onto event tokens / participant mentions, instead of compressing the question into one vector and hoping the working state is already correctly factored.
+
+v0.2 remains the intent-routing baseline.

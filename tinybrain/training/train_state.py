@@ -48,6 +48,29 @@ def stages_for_epoch(epoch: int, total_epochs: int, max_stage: int = 6) -> tuple
     return tuple(stage for stage in allowed if stage <= max_stage)
 
 
+def role_targets(batch: list[StateEpisode], device: torch.device) -> torch.Tensor:
+    """Simulator role of the questioned person. Not an inference input."""
+    labels = []
+    for ep in batch:
+        if ep.transfer_direction == "in":
+            labels.append(1)
+        elif ep.transfer_direction == "out":
+            labels.append(2)
+        else:
+            labels.append(0)
+    return torch.tensor(labels, dtype=torch.long, device=device)
+
+
+def xfer_qty_targets(
+    batch: list[StateEpisode], max_answer: int, device: torch.device
+) -> torch.Tensor:
+    targets = torch.full((len(batch),), -100, dtype=torch.long, device=device)
+    for i, ep in enumerate(batch):
+        if ep.transfer_qty is not None and 0 <= ep.transfer_qty <= max_answer:
+            targets[i] = ep.transfer_qty
+    return targets
+
+
 def mention_targets(batch: list[StateEpisode], max_events: int, max_answer: int, device: torch.device) -> torch.Tensor:
     targets = torch.full((len(batch), max_events), -100, dtype=torch.long, device=device)
     for i, ep in enumerate(batch):
@@ -117,6 +140,7 @@ def train(args: argparse.Namespace) -> dict:
         slot_dim=getattr(args, "slot_dim", 32),
         n_components=getattr(args, "n_components", 1),
         component_dim=getattr(args, "component_dim", 32),
+        role_aux=getattr(args, "role_aux", False),
     )
     model = SemanticStateModel(config).to(device)
     param_count = model.parameter_count()
@@ -149,7 +173,7 @@ def train(args: argparse.Namespace) -> dict:
         f"train: {len(train_all)} | held-out: {len(held)} | "
         f"semantic={config.semantic_dim} state={config.state_dim} inner={config.inner_steps} "
         f"slots={config.n_slots} components={config.n_components} "
-        f"symmetric={getattr(args, 'symmetric', False)}"
+        f"symmetric={getattr(args, 'symmetric', False)} role_aux={config.role_aux}"
     )
 
     epoch_log = []
@@ -180,13 +204,27 @@ def train(args: argparse.Namespace) -> dict:
             max_events = max(len(ep.events) for ep in batch)
             mention_y = mention_targets(batch, max_events, config.max_answer, device)
             opt.zero_grad(set_to_none=True)
-            logits, _, mention_logits = model(events, questions)
+            if model.role_head is not None:
+                logits, _, mention_logits, aux = model(events, questions, return_aux=True)
+            else:
+                logits, _, mention_logits = model(events, questions)
+                aux = {}
             answer_loss = loss_fn(logits, answers)
             aux_loss = mention_loss_fn(
                 mention_logits.reshape(-1, mention_logits.size(-1)),
                 mention_y.reshape(-1),
             )
             loss = answer_loss + 0.5 * aux_loss
+            if aux:
+                role_y = role_targets(batch, device)
+                xfer_y = xfer_qty_targets(batch, config.max_answer, device)
+                role_w = float(getattr(args, "role_aux_weight", 0.5))
+                role_loss = loss_fn(aux["role_logits"], role_y)
+                if (xfer_y != -100).any():
+                    xfer_loss = mention_loss_fn(aux["xfer_qty_logits"], xfer_y)
+                else:
+                    xfer_loss = logits.new_zeros(())
+                loss = loss + role_w * (role_loss + xfer_loss)
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
@@ -280,6 +318,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--n-components", type=int, default=1)
     ap.add_argument("--component-dim", type=int, default=32)
     ap.add_argument("--symmetric", action="store_true")
+    ap.add_argument("--role-aux", action="store_true")
+    ap.add_argument("--role-aux-weight", type=float, default=0.5)
     ap.add_argument("--output", type=Path, required=True)
     return ap
 

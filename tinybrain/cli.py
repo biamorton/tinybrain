@@ -56,6 +56,8 @@ def parser() -> argparse.ArgumentParser:
     train_state.add_argument("--n-components", type=int, default=1)
     train_state.add_argument("--component-dim", type=int, default=32)
     train_state.add_argument("--symmetric", action="store_true")
+    train_state.add_argument("--role-aux", action="store_true")
+    train_state.add_argument("--role-aux-weight", type=float, default=0.5)
     train_state.add_argument("--output", type=Path, default=DEFAULT_STATE_MODEL)
 
     bench_state = s.add_parser("benchmark-state")
@@ -90,6 +92,14 @@ def parser() -> argparse.ArgumentParser:
     relational.add_argument("--seeds", type=int, nargs="+", default=[1337, 2024, 4242])
     relational.add_argument("--smoke", action="store_true")
     relational.add_argument("--force", action="store_true")
+
+    roleaux = s.add_parser("compare-roleaux")
+    roleaux.add_argument("--epochs", type=int, default=20)
+    roleaux.add_argument("--per-stage", type=int, default=600)
+    roleaux.add_argument("--batch-size", type=int, default=32)
+    roleaux.add_argument("--seeds", type=int, nargs="+", default=[1337, 2024, 4242])
+    roleaux.add_argument("--smoke", action="store_true")
+    roleaux.add_argument("--force", action="store_true")
     return p
 
 
@@ -153,6 +163,9 @@ def main() -> None:
         ]
         if args.symmetric:
             cmd.append("--symmetric")
+        if args.role_aux:
+            cmd.append("--role-aux")
+            cmd.extend(["--role-aux-weight", str(args.role_aux_weight)])
         raise SystemExit(subprocess.call(cmd))
 
     if args.command == "sweep-state":
@@ -225,6 +238,31 @@ def main() -> None:
             + extra
         )
         run_relational(rel_args)
+        return
+
+    if args.command == "compare-roleaux":
+        from tinybrain.eval.state_roleaux import build_parser as roleaux_parser
+        from tinybrain.eval.state_roleaux import run_compare as run_roleaux
+
+        extra = []
+        if args.force:
+            extra.append("--force")
+        if args.smoke:
+            extra.append("--smoke")
+        roleaux_args = roleaux_parser().parse_args(
+            [
+                "--epochs",
+                str(args.epochs),
+                "--per-stage",
+                str(args.per_stage),
+                "--batch-size",
+                str(args.batch_size),
+                "--seeds",
+                *[str(x) for x in args.seeds],
+            ]
+            + extra
+        )
+        run_roleaux(roleaux_args)
         return
 
     if args.command == "benchmark-state":

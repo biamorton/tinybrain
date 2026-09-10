@@ -143,9 +143,11 @@ v0.3B (4 learned 32-d slots vs 32-d single vector, 3 seeds): **C/D role probes d
 
 v0.3C (4 unlabeled event components + symmetric questioning, 3 seeds): **components collapsed to copies of one vector.** Symmetric questions moved C/D off zero but not stably. Compare: `tinybrain compare-relational`.
 
+v0.3D (training-only role aux vs answer-only, 3 seeds): **aux labels did not produce stable C/D generalization.** Compare: `tinybrain compare-roleaux`.
+
 ### Current limitations
 
-- A single latent vector does not reliably bind several people and objects at once. Four learned unlabeled slots (v0.3B) and four unlabeled event components (v0.3C) both collapsed.
+- A single latent vector does not reliably bind several people and objects at once. Four learned unlabeled slots (v0.3B) and four unlabeled event components (v0.3C) both collapsed. Training-only role labels (v0.3D) did not stabilize C/D either.
 - One incoming/outgoing transfer is only partially learned; longer chains collapse.
 - Unusual wording (`started out with`, `a pair of`, `crayon total`) was **not** added to training and currently fails. That failure is kept.
 - Success on synthetic possession/transfer does **not** mean general language understanding.

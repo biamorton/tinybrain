@@ -29,6 +29,7 @@ class StateModelConfig:
     slot_dim: int = 32
     n_components: int = 1
     component_dim: int = 32
+    role_aux: bool = False
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -189,6 +190,13 @@ class SemanticStateModel(nn.Module):
         # Auxiliary: read the quantity mentioned in an event. This is not a
         # "gave" rule; it only pressures the encoder to extract numbers.
         self.mention_head = nn.Linear(mention_in, cfg.max_answer + 1)
+        self.role_head = None
+        self.xfer_qty_head = None
+        if cfg.role_aux:
+            # Training-only heads. Inference still takes raw text only.
+            feat_dim = cfg.semantic_dim + read_dim
+            self.role_head = nn.Linear(feat_dim, 3)
+            self.xfer_qty_head = nn.Linear(feat_dim, cfg.max_answer + 1)
 
     def _device(self) -> torch.device:
         return next(self.parameters()).device
@@ -208,7 +216,8 @@ class SemanticStateModel(nn.Module):
         events_batch: list[list[str]],
         questions: list[str],
         return_trace: bool = False,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor] | tuple[torch.Tensor, torch.Tensor, torch.Tensor, dict]:
+        return_aux: bool = False,
+    ) -> tuple:
         if len(events_batch) != len(questions):
             raise ValueError("events_batch and questions must be the same length")
         if not events_batch:
@@ -296,13 +305,16 @@ class SemanticStateModel(nn.Module):
         question_attn = None
         if self.use_relational:
             read_weights, readout = self.memory.read(memory, question_sem)
+            memory_read = readout
             logits = self.answer_head(question_sem, readout)
             question_attn = read_weights[0].detach().cpu().tolist()
         elif self.use_slots:
             read_weights, readout = self.memory.read(slots, question_sem)
+            memory_read = readout
             logits = self.answer_head(question_sem, readout)
             question_attn = read_weights[0].detach().cpu().tolist()
         else:
+            memory_read = state
             logits = self.answer_head(question_sem, state)
         n_events = torch.tensor(
             [len(events) for events in events_batch],
@@ -311,31 +323,38 @@ class SemanticStateModel(nn.Module):
         )
         n_updates = n_events * inner
         mention_logits = torch.stack(mention_steps, dim=1)
-        if not return_trace:
-            return logits, n_updates, mention_logits
-        trace = {
-            "n_slots": self.config.n_slots if self.use_slots else 1,
-            "n_components": self.config.n_components if self.use_relational else 1,
-            "event_write_attention": write_attn_steps,
-            "event_update_delta": update_delta_steps,
-            "question_read_attention": question_attn,
-            "event_token_attention": token_attn_steps,
-            "event_relation_attention": relation_attn_steps,
-            "event_component_cosine": component_cosine_steps,
-        }
-        if self.use_relational and last_memory is not None:
-            read_w = None
-            if question_attn is not None:
-                read_w = torch.tensor([question_attn], device=last_memory.device)
-            write_t = None
-            if write_attn_steps:
-                write_t = torch.tensor([write_attn_steps[-1]], device=last_memory.device)
-            trace["collapse"] = collapse_metrics(
-                components=last_memory[:1],
-                write_attn=write_t.unsqueeze(1) if write_t is not None else None,
-                read_attn=read_w,
-            )
-        return logits, n_updates, mention_logits, trace
+        aux = {}
+        if self.role_head is not None:
+            feat = torch.cat([question_sem, memory_read], dim=-1)
+            aux["role_logits"] = self.role_head(feat)
+            aux["xfer_qty_logits"] = self.xfer_qty_head(feat)
+        if return_trace:
+            trace = {
+                "n_slots": self.config.n_slots if self.use_slots else 1,
+                "n_components": self.config.n_components if self.use_relational else 1,
+                "event_write_attention": write_attn_steps,
+                "event_update_delta": update_delta_steps,
+                "question_read_attention": question_attn,
+                "event_token_attention": token_attn_steps,
+                "event_relation_attention": relation_attn_steps,
+                "event_component_cosine": component_cosine_steps,
+            }
+            if self.use_relational and last_memory is not None:
+                read_w = None
+                if question_attn is not None:
+                    read_w = torch.tensor([question_attn], device=last_memory.device)
+                write_t = None
+                if write_attn_steps:
+                    write_t = torch.tensor([write_attn_steps[-1]], device=last_memory.device)
+                trace["collapse"] = collapse_metrics(
+                    components=last_memory[:1],
+                    write_attn=write_t.unsqueeze(1) if write_t is not None else None,
+                    read_attn=read_w,
+                )
+            return logits, n_updates, mention_logits, trace
+        if return_aux:
+            return logits, n_updates, mention_logits, aux
+        return logits, n_updates, mention_logits
 
     @torch.inference_mode()
     def infer(self, events: list[str], question: str) -> tuple[int, int]:
