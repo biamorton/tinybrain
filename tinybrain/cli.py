@@ -51,6 +51,8 @@ def parser() -> argparse.ArgumentParser:
     train_state.add_argument("--lr", type=float, default=2e-3)
     train_state.add_argument("--seed", type=int, default=1337)
     train_state.add_argument("--max-stage", type=int, default=6)
+    train_state.add_argument("--n-slots", type=int, default=1)
+    train_state.add_argument("--slot-dim", type=int, default=32)
     train_state.add_argument("--output", type=Path, default=DEFAULT_STATE_MODEL)
 
     bench_state = s.add_parser("benchmark-state")
@@ -70,6 +72,13 @@ def parser() -> argparse.ArgumentParser:
     sweep.add_argument("--inner-steps", type=int, nargs="+", default=[1, 2, 4])
     sweep.add_argument("--extra-seeds", action="store_true")
     sweep.add_argument("--extra-top", type=int, default=3)
+
+    compare = s.add_parser("compare-multislot")
+    compare.add_argument("--epochs", type=int, default=20)
+    compare.add_argument("--per-stage", type=int, default=600)
+    compare.add_argument("--batch-size", type=int, default=32)
+    compare.add_argument("--seeds", type=int, nargs="+", default=[1337, 2024, 4242])
+    compare.add_argument("--force", action="store_true")
     return p
 
 
@@ -120,6 +129,10 @@ def main() -> None:
             str(args.seed),
             "--max-stage",
             str(args.max_stage),
+            "--n-slots",
+            str(args.n_slots),
+            "--slot-dim",
+            str(args.slot_dim),
             "--output",
             str(args.output),
         ]
@@ -149,6 +162,27 @@ def main() -> None:
             + (["--extra-seeds"] if args.extra_seeds else [])
         )
         run_sweep(sweep_args)
+        return
+
+    if args.command == "compare-multislot":
+        from tinybrain.eval.state_multislot import build_parser as compare_parser
+        from tinybrain.eval.state_multislot import run_compare
+
+        extra = ["--force"] if args.force else []
+        compare_args = compare_parser().parse_args(
+            [
+                "--epochs",
+                str(args.epochs),
+                "--per-stage",
+                str(args.per_stage),
+                "--batch-size",
+                str(args.batch_size),
+                "--seeds",
+                *[str(x) for x in args.seeds],
+            ]
+            + extra
+        )
+        run_compare(compare_args)
         return
 
     if args.command == "benchmark-state":

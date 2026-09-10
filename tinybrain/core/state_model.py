@@ -6,6 +6,7 @@ import torch
 from torch import nn
 
 from tinybrain.core.semantic import encode_text_batch
+from tinybrain.core.slot_memory import MultiSlotMemory
 from tinybrain.metrics import model_parameter_mb
 
 
@@ -19,6 +20,8 @@ class StateModelConfig:
     max_answer: int = 64
     inner_steps: int = 1
     max_bytes: int = 192
+    n_slots: int = 1
+    slot_dim: int = 32
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -113,23 +116,36 @@ class SemanticStateModel(nn.Module):
         cfg = self.config
         if cfg.inner_steps < 1:
             raise ValueError("inner_steps must be >= 1")
+        if cfg.n_slots < 1:
+            raise ValueError("n_slots must be >= 1")
+        self.use_slots = cfg.n_slots > 1
+        read_dim = cfg.slot_dim if self.use_slots else cfg.state_dim
         self.encoder = StateSentenceEncoder(
             cfg.embed_dim, cfg.encoder_hidden, cfg.semantic_dim
         )
-        self.memory = WorkingMemoryCell(cfg.semantic_dim, cfg.state_dim)
+        if self.use_slots:
+            self.memory = MultiSlotMemory(cfg.semantic_dim, cfg.slot_dim, cfg.n_slots)
+            self.init_slots = nn.Parameter(0.02 * torch.randn(cfg.n_slots, cfg.slot_dim))
+            self.init_state = None
+        else:
+            self.memory = WorkingMemoryCell(cfg.semantic_dim, cfg.state_dim)
+            self.init_state = nn.Parameter(torch.zeros(cfg.state_dim))
+            self.init_slots = None
         self.answer_head = AnswerHead(
             cfg.semantic_dim,
-            cfg.state_dim,
+            read_dim,
             cfg.answer_hidden,
             cfg.max_answer + 1,
         )
         # Auxiliary: read the quantity mentioned in an event. This is not a
         # "gave" rule; it only pressures the encoder to extract numbers.
         self.mention_head = nn.Linear(cfg.semantic_dim, cfg.max_answer + 1)
-        self.init_state = nn.Parameter(torch.zeros(cfg.state_dim))
+
+    def _device(self) -> torch.device:
+        return next(self.parameters()).device
 
     def encode_texts(self, texts: list[str]) -> torch.Tensor:
-        device = self.init_state.device
+        device = self._device()
         ids, lengths = encode_text_batch(texts, device, max_bytes=self.config.max_bytes)
         return self.encoder(ids, lengths)
 
@@ -137,21 +153,28 @@ class SemanticStateModel(nn.Module):
         self,
         events_batch: list[list[str]],
         questions: list[str],
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        return_trace: bool = False,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor] | tuple[torch.Tensor, torch.Tensor, torch.Tensor, dict]:
         if len(events_batch) != len(questions):
             raise ValueError("events_batch and questions must be the same length")
         if not events_batch:
             raise ValueError("empty batch")
 
-        device = self.init_state.device
+        device = self._device()
         batch_size = len(events_batch)
         max_events = max(len(events) for events in events_batch)
         if max_events < 1:
             raise ValueError("every episode needs at least one event")
 
-        state = self.init_state.unsqueeze(0).expand(batch_size, -1).contiguous()
         inner = self.config.inner_steps
         mention_steps: list[torch.Tensor] = []
+        write_attn_steps: list[list[float]] = []
+        update_delta_steps: list[list[float]] = []
+
+        if self.use_slots:
+            slots = self.init_slots.unsqueeze(0).expand(batch_size, -1, -1).contiguous()
+        else:
+            state = self.init_state.unsqueeze(0).expand(batch_size, -1).contiguous()
 
         for step in range(max_events):
             step_texts = []
@@ -165,14 +188,31 @@ class SemanticStateModel(nn.Module):
                     mask_vals.append(0.0)
             semantic = self.encode_texts(step_texts)
             mention_steps.append(self.mention_head(semantic))
-            updated = state
-            for _ in range(inner):
-                updated = self.memory(semantic, updated)
-            mask = torch.tensor(mask_vals, device=device, dtype=state.dtype).unsqueeze(-1)
-            state = updated * mask + state * (1.0 - mask)
+            mask = torch.tensor(mask_vals, device=device, dtype=semantic.dtype)
+            if self.use_slots:
+                updated = slots
+                weights = None
+                delta = None
+                for _ in range(inner):
+                    updated, weights, delta = self.memory.write(updated, semantic)
+                slots = updated * mask.view(batch_size, 1, 1) + slots * (1.0 - mask.view(batch_size, 1, 1))
+                if return_trace:
+                    write_attn_steps.append(weights[0].detach().cpu().tolist())
+                    update_delta_steps.append(delta[0].detach().cpu().tolist())
+            else:
+                updated = state
+                for _ in range(inner):
+                    updated = self.memory(semantic, updated)
+                state = updated * mask.unsqueeze(-1) + state * (1.0 - mask.unsqueeze(-1))
 
         question_sem = self.encode_texts(questions)
-        logits = self.answer_head(question_sem, state)
+        if self.use_slots:
+            read_weights, readout = self.memory.read(slots, question_sem)
+            logits = self.answer_head(question_sem, readout)
+            question_attn = read_weights[0].detach().cpu().tolist()
+        else:
+            logits = self.answer_head(question_sem, state)
+            question_attn = None
         n_events = torch.tensor(
             [len(events) for events in events_batch],
             device=device,
@@ -180,7 +220,15 @@ class SemanticStateModel(nn.Module):
         )
         n_updates = n_events * inner
         mention_logits = torch.stack(mention_steps, dim=1)
-        return logits, n_updates, mention_logits
+        if not return_trace:
+            return logits, n_updates, mention_logits
+        trace = {
+            "n_slots": self.config.n_slots if self.use_slots else 1,
+            "event_write_attention": write_attn_steps,
+            "event_update_delta": update_delta_steps,
+            "question_read_attention": question_attn,
+        }
+        return logits, n_updates, mention_logits, trace
 
     @torch.inference_mode()
     def infer(self, events: list[str], question: str) -> tuple[int, int]:
@@ -188,6 +236,13 @@ class SemanticStateModel(nn.Module):
         logits, n_updates, _ = self.forward([events], [question])
         predicted = int(logits.argmax(dim=-1)[0].item())
         return predicted, int(n_updates[0].item())
+
+    @torch.inference_mode()
+    def infer_trace(self, events: list[str], question: str) -> tuple[int, int, dict]:
+        self.eval()
+        logits, n_updates, _, trace = self.forward([events], [question], return_trace=True)
+        predicted = int(logits.argmax(dim=-1)[0].item())
+        return predicted, int(n_updates[0].item()), trace
 
     def parameter_count(self) -> int:
         return sum(p.numel() for p in self.parameters())

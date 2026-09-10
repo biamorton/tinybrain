@@ -139,9 +139,11 @@ This is **not** solved. It is useful evidence. See [EXPERIMENTS.md](EXPERIMENTS.
 
 v0.3A (Stages 1–3 only, 12 configs): extra `inner_steps` did **not** reliably replace a larger state. Role-reversal remains the main transfer error. Bob/Rebekah still fails on several configs (predicted 3). Sweep: `tinybrain sweep-state`.
 
+v0.3B (4 learned 32-d slots vs 32-d single vector, 3 seeds): **C/D role probes did not improve.** Attention collapsed onto one slot. Compare: `tinybrain compare-multislot`.
+
 ### Current limitations
 
-- A single latent vector does not reliably bind several people and objects at once.
+- A single latent vector does not reliably bind several people and objects at once. Four learned unlabeled slots (v0.3B) did not fix role C/D either.
 - One incoming/outgoing transfer is only partially learned; longer chains collapse.
 - Unusual wording (`started out with`, `a pair of`, `crayon total`) was **not** added to training and currently fails. That failure is kept.
 - Success on synthetic possession/transfer does **not** mean general language understanding.

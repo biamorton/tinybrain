@@ -113,6 +113,8 @@ def train(args: argparse.Namespace) -> dict:
         answer_hidden=args.answer_hidden,
         max_answer=args.max_answer,
         inner_steps=args.inner_steps,
+        n_slots=getattr(args, "n_slots", 1),
+        slot_dim=getattr(args, "slot_dim", 32),
     )
     model = SemanticStateModel(config).to(device)
     param_count = model.parameter_count()
@@ -267,6 +269,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--lr", type=float, default=2e-3)
     ap.add_argument("--seed", type=int, default=1337)
     ap.add_argument("--max-stage", type=int, default=6)
+    ap.add_argument("--n-slots", type=int, default=1)
+    ap.add_argument("--slot-dim", type=int, default=32)
     ap.add_argument("--output", type=Path, required=True)
     return ap
 

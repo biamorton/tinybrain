@@ -230,10 +230,102 @@ Averaging seed 1337 across widths:
 
 Decision: **do not treat extra recurrent steps as a substitute for a better state representation.** Do not treat 256-d as a solved transfer model. The single-vector state still does not implement queryable source/recipient bindings. That failure is stable across the grid; the accuracy numbers are not.
 
+v0.3B below tests whether addressable slots fix that.
+
+---
+
+## v0.3B — Learned multi-slot working memory
+
+Hypothesis:
+
+> Does a tiny learned multi-slot/associative working memory solve entity-role binding better than a single compressed latent vector, without relying on handcrafted language rules?
+
+This is **not** v0.4. Encoder, curriculum, held-out templates, Bob/Rebekah, unusual probes, and A/B/C/D probes are unchanged. No `gave` rules, no name-to-slot wiring, no giver/recipient auxiliary labels.
+
+### Architecture
+
+```text
+event encoder (shared)
+    → learned write attention over 4 slots
+    → shared GRUCell + gate writes into addressed slots
+    → memory persists across events
+
+question encoder (shared)
+    → learned read attention over slots
+    → quantity head
+```
+
+Each slot is 32-d. Addressing is content-based softmax. The same update module is reused for every event. Slots are not labeled as people, objects, or roles.
+
+### Controlled comparison
+
+| | baseline | multi-slot |
+| --- | --- | --- |
+| memory | 1 vector, 32-d | 4 slots × 32-d |
+| inner_steps | 1 | 1 |
+| params | 122,978 (0.469 MB) | 129,314 (0.493 MB) |
+| epochs / per-stage / stages | 20 / 600 / 1–3 | same |
+| seeds | 1337, 2024, 4242 | same |
+| optimizer | AdamW 2e-3 | same |
+
+```powershell
+tinybrain compare-multislot
+```
+
+Results: `experiments/state_v03b_multislot.csv` and `.json`. Checkpoints are local-only (`experiments/multislot_models/`).
+
+### Results (primary metric: frozen role C+D)
+
+| arch | seed | S1 HO | S2 HO | S3 HO | S2+3 HO | C | D | C+D | Bob | OOD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| baseline | 1337 | 93.8 | 56.2 | 57.5 | 56.9 | 0.0 | 0.0 | **0.0** | 3 | 1/3 |
+| baseline | 2024 | 63.8 | 36.2 | 43.8 | 40.0 | 0.0 | 0.0 | **0.0** | 7 | 1/3 |
+| baseline | 4242 | 76.2 | 46.2 | 40.0 | 43.1 | 0.0 | 0.0 | **0.0** | 7 | 1/3 |
+| multislot | 1337 | 76.2 | 47.5 | 48.8 | 48.1 | 0.0 | 33.3 | **16.7** | 3 | 2/3 |
+| multislot | 2024 | 72.5 | 51.2 | 41.2 | 46.2 | 0.0 | 0.0 | **0.0** | 3 | 1/3 |
+| multislot | 4242 | 71.2 | 51.2 | 38.8 | 45.0 | 0.0 | 0.0 | **0.0** | 7 | 1/3 |
+
+Mean S2+3: baseline **46.7%**, multi-slot **46.5%**. Mean C+D: baseline **0%**, multi-slot **5.6%** (one seed got 1/3 on family D).
+
+Role C (ask the recipient who started at zero) is **0/3 on every seed of both architectures**.
+
+### Bob / Rebekah
+
+| arch | 1337 | 2024 | 4242 |
+| --- | ---: | ---: | ---: |
+| baseline | 3 reversed | 7 | 7 |
+| multislot | 3 reversed | 3 reversed | 7 |
+
+### Error types (held-out Stage 2+3 reversed_transfer counts / 160)
+
+Baseline: 40, 39, 34. Multi-slot: 27, 31, 33. Reversal remains the modal miss. Ignored transfers stay rare (2–4).
+
+### Slot-attention diagnostics
+
+On trained multi-slot models, write and read attention **collapse onto a single slot** (weights ≈ 1.0 on one index, ~0 on the others). Later events overwrite that same slot. Question readout uses the same slot.
+
+The extra slots exist in the tensor but are not used as separable entity stores. This is not interpreted as “slot 0 is Bob”; it is evidence that learned addressing did not separate entities.
+
+### Cost
+
+RSS ~325 MB for both. Train ~3.5–4 min per seed. Inference ~1.2–1.6 ms/episode. Multi-slot is +6.3k params (+0.024 MB).
+
+### Interpretation
+
+**CASE A** (C/D strongly improves across seeds): not supported.
+
+**CASE B** (aggregate up, C/D still poor): aggregate did not rise. C/D remains poor.
+
+**CASE C** (no meaningful role-binding gain): **supported.** Four unlabeled slots with learned attention did not solve source/recipient queries.
+
+**CASE D** (one lucky seed): S2+3 and Bob still vary by seed. C/D failure is stable.
+
+Do not add more slots on this evidence. The model already ignores three of four.
+
 ### Next experiment (still not v0.4)
 
-Recommended: **learned multi-slot / associative working memory**, same encoder, same frozen probes. Still no `gave` rules.
+Target **semantic role / relational binding** in the update itself: the network needs a learned distinction between who loses and who gains, not just more addresses. That must still be learned from answers, not a `gave` parser. Role-auxiliary labels are a later option if an unsupervised relational update also fails.
 
-A secondary stability check (more seeds or a longer plateau on Stages 2–3) would be needed before claiming any size/compute ranking. It should not delay the role-binding experiment: C/D never worked here.
+Keep Bob/Rebekah and C/D frozen.
 
 v0.2 remains the intent-routing baseline.

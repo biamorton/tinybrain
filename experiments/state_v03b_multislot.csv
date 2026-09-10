@@ -1,0 +1,7 @@
+arch,n_slots,slot_dim,state_dim,seed,parameter_count,parameter_mb,rss_mb,training_seconds,inference_latency_ms,stage1_heldout,stage2_heldout,stage3_heldout,heldout_transfer_accuracy,compositional_accuracy,bob_predicted,bob_correct,bob_error,unusual_correct,unusual_n,role_A,role_B,role_C,role_D,role_CD,held_out_transfer_accuracy_per_parameter_MB,C_D_role_accuracy_per_parameter_MB,ignored_transfer,reversed_transfer,other_person_quantity,wrong_arithmetic,unrelated
+baseline,1,32,32,1337,122978,0.4691,322.62,208.7,1.256,93.75,56.25,57.5,56.88,53.75,3,False,reversed_transfer,1,3,66.67,33.33,0.0,0.0,0.0,1.2124,0.0,4,40,6,13,6
+baseline,1,32,32,2024,122978,0.4691,324.68,204.0,1.213,63.75,36.25,43.75,40.0,53.75,7,True,exact,1,3,33.33,66.67,0.0,0.0,0.0,0.8527,0.0,3,39,2,41,11
+baseline,1,32,32,4242,122978,0.4691,324.83,224.8,1.203,76.25,46.25,40.0,43.12,68.75,7,True,exact,1,3,0.0,66.67,0.0,0.0,0.0,0.9193,0.0,2,34,11,27,17
+multislot,4,32,32,1337,129314,0.4933,324.73,233.3,1.308,76.25,47.5,48.75,48.12,48.75,3,False,reversed_transfer,2,3,33.33,66.67,0.0,33.33,16.67,0.9756,0.3379,3,27,1,34,18
+multislot,4,32,32,2024,129314,0.4933,324.66,232.6,1.646,72.5,51.25,41.25,46.25,57.5,3,False,reversed_transfer,1,3,33.33,100.0,0.0,0.0,0.0,0.9376,0.0,4,31,1,39,11
+multislot,4,32,32,4242,129314,0.4933,325.85,226.6,1.277,71.25,51.25,38.75,45.0,62.5,7,True,exact,1,3,66.67,66.67,0.0,0.0,0.0,0.9122,0.0,3,33,3,29,20

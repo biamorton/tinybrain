@@ -21,6 +21,7 @@ build/
 htmlcov/
 
 experiments/sweep_models/
+experiments/multislot_models/
 
 # Local runtime artifacts
 demo_memory.json
