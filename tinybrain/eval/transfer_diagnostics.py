@@ -7,6 +7,7 @@ from tinybrain.training.state_data import StateEpisode
 
 TRANSFER_ERROR_LABELS = (
     "exact",
+    "query_target_swap",
     "ignored_transfer",
     "reversed_transfer",
     "other_person_quantity",
@@ -34,6 +35,8 @@ def classify_prediction(episode: StateEpisode, predicted: int) -> str:
     """
     if predicted == episode.answer:
         return "exact"
+    if episode.other_qty is not None and predicted == episode.other_qty:
+        return "query_target_swap"
     if episode.initial_qty is not None and predicted == episode.initial_qty:
         return "ignored_transfer"
     reversed_qty = reversed_quantity(episode)

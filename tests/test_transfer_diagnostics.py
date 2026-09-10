@@ -4,7 +4,12 @@ from tinybrain.training.state_data import DEMO_EPISODE, ROLE_PROBES, UNUSUAL_PRO
 from tinybrain.training.train_state import stages_for_epoch
 
 
-def test_bob_error_modes():
+def test_query_target_swap_is_other_participant_final():
+    probe = next(ep for ep in ROLE_PROBES if ep.probe_family == "D" and ep.target_name == "Rebekah")
+    assert probe.answer == 2
+    assert probe.other_qty == 7
+    assert classify_prediction(probe, 7) == "query_target_swap"
+    assert classify_prediction(probe, 2) == "exact"
     assert classify_prediction(DEMO_EPISODE, 7) == "exact"
     assert classify_prediction(DEMO_EPISODE, 5) == "ignored_transfer"
     assert classify_prediction(DEMO_EPISODE, 3) == "reversed_transfer"

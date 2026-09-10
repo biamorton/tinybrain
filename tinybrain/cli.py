@@ -58,6 +58,7 @@ def parser() -> argparse.ArgumentParser:
     train_state.add_argument("--symmetric", action="store_true")
     train_state.add_argument("--role-aux", action="store_true")
     train_state.add_argument("--role-aux-weight", type=float, default=0.5)
+    train_state.add_argument("--query-pointer", action="store_true")
     train_state.add_argument("--output", type=Path, default=DEFAULT_STATE_MODEL)
 
     bench_state = s.add_parser("benchmark-state")
@@ -100,6 +101,14 @@ def parser() -> argparse.ArgumentParser:
     roleaux.add_argument("--seeds", type=int, nargs="+", default=[1337, 2024, 4242])
     roleaux.add_argument("--smoke", action="store_true")
     roleaux.add_argument("--force", action="store_true")
+
+    pointer = s.add_parser("compare-pointer")
+    pointer.add_argument("--epochs", type=int, default=20)
+    pointer.add_argument("--per-stage", type=int, default=600)
+    pointer.add_argument("--batch-size", type=int, default=32)
+    pointer.add_argument("--seeds", type=int, nargs="+", default=[1337, 2024, 4242])
+    pointer.add_argument("--smoke", action="store_true")
+    pointer.add_argument("--force", action="store_true")
     return p
 
 
@@ -166,6 +175,8 @@ def main() -> None:
         if args.role_aux:
             cmd.append("--role-aux")
             cmd.extend(["--role-aux-weight", str(args.role_aux_weight)])
+        if args.query_pointer:
+            cmd.append("--query-pointer")
         raise SystemExit(subprocess.call(cmd))
 
     if args.command == "sweep-state":
@@ -263,6 +274,31 @@ def main() -> None:
             + extra
         )
         run_roleaux(roleaux_args)
+        return
+
+    if args.command == "compare-pointer":
+        from tinybrain.eval.state_pointer import build_parser as pointer_parser
+        from tinybrain.eval.state_pointer import run_compare as run_pointer
+
+        extra = []
+        if args.force:
+            extra.append("--force")
+        if args.smoke:
+            extra.append("--smoke")
+        pointer_args = pointer_parser().parse_args(
+            [
+                "--epochs",
+                str(args.epochs),
+                "--per-stage",
+                str(args.per_stage),
+                "--batch-size",
+                str(args.batch_size),
+                "--seeds",
+                *[str(x) for x in args.seeds],
+            ]
+            + extra
+        )
+        run_pointer(pointer_args)
         return
 
     if args.command == "benchmark-state":

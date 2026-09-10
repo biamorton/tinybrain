@@ -985,12 +985,158 @@ RELATIONAL_PROBES = [
 ]
 
 
+def _cf(
+    events: list[str],
+    question: str,
+    answer: int,
+    *,
+    target_name: str,
+    target_object: str,
+    mentioned: list[int],
+    initial: int,
+    transfer_qty: int,
+    direction: str,
+    other_qty: int,
+    pair: str,
+) -> StateEpisode:
+    ep = _role(
+        events,
+        question,
+        answer,
+        target_name=target_name,
+        target_object=target_object,
+        mentioned=mentioned,
+        initial=initial,
+        transfer_qty=transfer_qty,
+        direction=direction,
+        other_qty=other_qty,
+        family="CF",
+    )
+    ep.probe_family = f"CF:{pair}"
+    return ep
+
+
+# Same stored context, two questions. Never trained on these exact pairs.
+COUNTERFACTUAL_PROBES = [
+    _cf(
+        ["Bob has 5 crayons.", "Rebekah has 4 crayons.", "Rebekah gave Bob 2 crayons."],
+        "How many crayons does Bob have?",
+        7,
+        target_name="Bob",
+        target_object="crayons",
+        mentioned=[5, 4, 2],
+        initial=5,
+        transfer_qty=2,
+        direction="in",
+        other_qty=2,
+        pair="bob_rebekah",
+    ),
+    _cf(
+        ["Bob has 5 crayons.", "Rebekah has 4 crayons.", "Rebekah gave Bob 2 crayons."],
+        "How many crayons does Rebekah have?",
+        2,
+        target_name="Rebekah",
+        target_object="crayons",
+        mentioned=[5, 4, 2],
+        initial=4,
+        transfer_qty=2,
+        direction="out",
+        other_qty=7,
+        pair="bob_rebekah",
+    ),
+    _cf(
+        ["Maya has 6 stickers.", "Liam has 9 stickers.", "Liam gave Maya 4 stickers."],
+        "How many stickers does Maya have?",
+        10,
+        target_name="Maya",
+        target_object="stickers",
+        mentioned=[6, 9, 4],
+        initial=6,
+        transfer_qty=4,
+        direction="in",
+        other_qty=5,
+        pair="maya_liam",
+    ),
+    _cf(
+        ["Maya has 6 stickers.", "Liam has 9 stickers.", "Liam gave Maya 4 stickers."],
+        "How many stickers does Liam have?",
+        5,
+        target_name="Liam",
+        target_object="stickers",
+        mentioned=[6, 9, 4],
+        initial=9,
+        transfer_qty=4,
+        direction="out",
+        other_qty=10,
+        pair="maya_liam",
+    ),
+    _cf(
+        ["Alice has 8 apples.", "Jenny has 3 apples.", "Alice gave Jenny 2 apples."],
+        "How many apples does Alice have?",
+        6,
+        target_name="Alice",
+        target_object="apples",
+        mentioned=[8, 3, 2],
+        initial=8,
+        transfer_qty=2,
+        direction="out",
+        other_qty=5,
+        pair="alice_jenny",
+    ),
+    _cf(
+        ["Alice has 8 apples.", "Jenny has 3 apples.", "Alice gave Jenny 2 apples."],
+        "How many apples does Jenny have?",
+        5,
+        target_name="Jenny",
+        target_object="apples",
+        mentioned=[8, 3, 2],
+        initial=3,
+        transfer_qty=2,
+        direction="in",
+        other_qty=6,
+        pair="alice_jenny",
+    ),
+    _cf(
+        ["Sam has 4 coins.", "Priya has 11 coins.", "Priya gave Sam 5 coins."],
+        "How many coins does Sam have?",
+        9,
+        target_name="Sam",
+        target_object="coins",
+        mentioned=[4, 11, 5],
+        initial=4,
+        transfer_qty=5,
+        direction="in",
+        other_qty=6,
+        pair="sam_priya",
+    ),
+    _cf(
+        ["Sam has 4 coins.", "Priya has 11 coins.", "Priya gave Sam 5 coins."],
+        "How many coins does Priya have?",
+        6,
+        target_name="Priya",
+        target_object="coins",
+        mentioned=[4, 11, 5],
+        initial=11,
+        transfer_qty=5,
+        direction="out",
+        other_qty=9,
+        pair="sam_priya",
+    ),
+]
+
+
 def episode_key(episode: StateEpisode) -> tuple[tuple[str, ...], str]:
     return (tuple(episode.events), episode.question)
 
 
 def frozen_episodes() -> list[StateEpisode]:
-    return [DEMO_EPISODE, *UNUSUAL_PROBES, *ROLE_PROBES, *RELATIONAL_PROBES]
+    return [
+        DEMO_EPISODE,
+        *UNUSUAL_PROBES,
+        *ROLE_PROBES,
+        *RELATIONAL_PROBES,
+        *COUNTERFACTUAL_PROBES,
+    ]
 
 
 FROZEN_KEYS = {episode_key(ep) for ep in frozen_episodes()}

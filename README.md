@@ -145,9 +145,11 @@ v0.3C (4 unlabeled event components + symmetric questioning, 3 seeds): **compone
 
 v0.3D (training-only role aux vs answer-only, 3 seeds): **aux labels did not produce stable C/D generalization.** Compare: `tinybrain compare-roleaux`.
 
+v0.3E (question attends over event tokens, 2 seeds): **C/D did not improve.** Counterfactual same-context pairs were 0%. Seed 2024 showed query collapse. Compare: `tinybrain compare-pointer`.
+
 ### Current limitations
 
-- A single latent vector does not reliably bind several people and objects at once. Four learned unlabeled slots (v0.3B) and four unlabeled event components (v0.3C) both collapsed. Training-only role labels (v0.3D) did not stabilize C/D either.
+- A single latent vector does not reliably bind several people and objects at once. Slots, relational components, role-aux labels, and query-side token attention all failed to make C/D stable. Token attention can change with the question and still retrieve the wrong quantity.
 - One incoming/outgoing transfer is only partially learned; longer chains collapse.
 - Unusual wording (`started out with`, `a pair of`, `crayon total`) was **not** added to training and currently fails. That failure is kept.
 - Success on synthetic possession/transfer does **not** mean general language understanding.

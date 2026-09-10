@@ -457,4 +457,78 @@ Do not make the model bigger. Do not add more slots or components. Do not add po
 
 Recommended next hypothesis (not implemented): **query-side binding** — attend from the question onto event tokens / participant mentions, instead of compressing the question into one vector and hoping the working state is already correctly factored.
 
+v0.3E below tests that hypothesis.
+
+---
+
+## v0.3E — Query-side binding / pointer readout
+
+Hypothesis:
+
+> Does TinyBrain fail role-binding because its question representation cannot select the relevant participant/event information?
+
+This is **not** v0.4. Same encoder, same symmetric-question protocol, same frozen probes. No name matching, no `gave` rules, no role labels.
+
+### Architecture
+
+**Control (`single_sym`):** pooled event vector → 32-d GRU working memory → pooled question + state → answer. Reused v0.3C checkpoints; re-evaluated with new diagnostics.
+
+**Treatment (`pointer`):** retain biGRU token states for every event. A learned query is pooled from question tokens, then one cross-attention layer reads the concatenated event tokens. Answer head sees (query, readout) only. No extra Transformer stack. Hidden sizes unchanged (`embed=48`, `encoder=80`, `query_dim=32`).
+
+```powershell
+tinybrain compare-pointer --smoke
+tinybrain compare-pointer
+```
+
+### Controlled comparison
+
+| | single_sym | pointer |
+| --- | --- | --- |
+| question path | pooled vector | learned query over question tokens |
+| event path | pooled vector + GRU | retained tokens + cross-attention |
+| params | 122,978 (0.469 MB) | 138,274 (0.527 MB) |
+| symmetric questions | yes | yes |
+| seeds | 1337, 2024 | same |
+
+Stopped after two seeds: C/D did not improve on the smoke seed, and seed 2024 collapsed. A third seed would not change that decision.
+
+Results: `experiments/state_v03e_pointer.csv` and `.json`.
+
+### Results (primary: C+D and counterfactual pairs)
+
+| arch | seed | S1 HO | S2+3 HO | A | B | C | D | C+D | CF pairs | Q-collapse | Bob | OOD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| single_sym | 1337 | 70.0 | 13.8 | 0.0 | 33.3 | 33.3 | 66.7 | **50.0** | 0.0 | 100 | 3 | 0/3 |
+| pointer | 1337 | 53.8 | 35.6 | 66.7 | 33.3 | 33.3 | 33.3 | **33.3** | 0.0 | 75 | **7** | 1/3 |
+| single_sym | 2024 | 77.5 | 20.6 | 33.3 | 66.7 | 0.0 | 33.3 | **16.7** | 0.0 | 100 | 3 | 1/3 |
+| pointer | 2024 | 63.8 | 3.1 | 0.0 | 0.0 | 33.3 | 0.0 | **16.7** | 0.0 | 100 | 0 | 0/3 |
+
+Counterfactual same-context/different-question pairs: **0/4 both-correct on every run**.
+
+`query_target_swap` on held-out Stage 2+3 (n=160): control 55 / 65; pointer 23 / 49. Fewer swaps on seed 1337, still the dominant miss on seed 2024.
+
+### Attention diagnostics
+
+Seed 1337, Bob vs Rebekah on the frozen D-context: readout cosine 0.87 (**not** query-collapse); top events differed (0 vs 2). Other three CF pairs still collapsed (cosine ≥ 0.90). Answers were still wrong except Bob=7.
+
+Seed 2024: attention entropy ≈ 0. All mass on one token of the last event, **identical** for Bob and Rebekah questions. **QUERY COLLAPSE.** Predicted 0 almost everywhere.
+
+Control readout is question-independent by construction (same working state), so collapse rate is 100%.
+
+### Interpretation
+
+**CASE A** (stable C/D + CF gains): not supported.
+
+**CASE B** (attention changes, answers wrong): only a fragment on seed 1337. Not stable.
+
+**CASE C** (collapse + C/D near chance): supported for seed 2024, and for CF pairs on both seeds.
+
+**CASE D** (one lucky seed): Bob PASS on 1337 did not repeat. Do not claim success.
+
+Query-side attention is not the missing mechanism for this byte-GRU substrate. Token states from the current encoder do not give the pointer a reliable identity to bind to.
+
+### Next (not implemented)
+
+Replace the sentence/token substrate with **explicit learned mention representations** (still unlabeled, still neural). Do not add slots, components, role rules, or width.
+
 v0.2 remains the intent-routing baseline.

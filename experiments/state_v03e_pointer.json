@@ -1,0 +1,3150 @@
+{
+  "experiment": "v0.3E",
+  "hypothesis": "Does TinyBrain fail role-binding because its question representation cannot select the relevant participant/event information?",
+  "single_sym": {
+    "query_pointer": false,
+    "state_dim": 32,
+    "symmetric": true
+  },
+  "pointer": {
+    "query_pointer": true,
+    "state_dim": 32,
+    "symmetric": true
+  },
+  "seeds": [
+    1337,
+    1337,
+    2024,
+    2024
+  ],
+  "runs": [
+    {
+      "arch": "single_sym",
+      "seed": 1337,
+      "config": {
+        "embed_dim": 48,
+        "encoder_hidden": 80,
+        "semantic_dim": 64,
+        "state_dim": 32,
+        "answer_hidden": 96,
+        "max_answer": 64,
+        "inner_steps": 1,
+        "max_bytes": 192,
+        "n_slots": 1,
+        "slot_dim": 32,
+        "n_components": 1,
+        "component_dim": 32,
+        "role_aux": false,
+        "query_pointer": false
+      },
+      "model_path": "experiments\\relational_models\\single_sym_seed1337.pt",
+      "parameter_count": 122978,
+      "parameter_mb": 0.46912384033203125,
+      "training_seconds": 463.54526119993534,
+      "mean_recurrent_updates": 1.6666666666666667,
+      "role_cd_accuracy": 0.5,
+      "traces": [],
+      "heldout": {
+        "accuracy": 0.325,
+        "correct": 78,
+        "n": 240,
+        "mean_updates": 1.6666666666666667,
+        "by_stage": {
+          "1": {
+            "correct": 56,
+            "n": 80,
+            "accuracy": 0.7
+          },
+          "2": {
+            "correct": 11,
+            "n": 80,
+            "accuracy": 0.1375
+          },
+          "3": {
+            "correct": 11,
+            "n": 80,
+            "accuracy": 0.1375
+          }
+        },
+        "error_modes": {
+          "n": 240,
+          "counts": {
+            "exact": 78,
+            "query_target_swap": 55,
+            "ignored_transfer": 7,
+            "reversed_transfer": 12,
+            "other_person_quantity": 16,
+            "wrong_arithmetic": 35,
+            "unrelated": 37
+          },
+          "rates": {
+            "exact": 0.325,
+            "query_target_swap": 0.22916666666666666,
+            "ignored_transfer": 0.029166666666666667,
+            "reversed_transfer": 0.05,
+            "other_person_quantity": 0.06666666666666667,
+            "wrong_arithmetic": 0.14583333333333334,
+            "unrelated": 0.15416666666666667
+          }
+        },
+        "transfer_error_modes": {
+          "n": 160,
+          "counts": {
+            "exact": 22,
+            "query_target_swap": 55,
+            "ignored_transfer": 7,
+            "reversed_transfer": 12,
+            "other_person_quantity": 16,
+            "wrong_arithmetic": 35,
+            "unrelated": 13
+          },
+          "rates": {
+            "exact": 0.1375,
+            "query_target_swap": 0.34375,
+            "ignored_transfer": 0.04375,
+            "reversed_transfer": 0.075,
+            "other_person_quantity": 0.1,
+            "wrong_arithmetic": 0.21875,
+            "unrelated": 0.08125
+          }
+        }
+      },
+      "in_distribution": {
+        "accuracy": 0.5583333333333333,
+        "correct": 67,
+        "n": 120,
+        "mean_updates": 1.6666666666666667,
+        "by_stage": {
+          "1": {
+            "correct": 40,
+            "n": 40,
+            "accuracy": 1.0
+          },
+          "2": {
+            "correct": 13,
+            "n": 40,
+            "accuracy": 0.325
+          },
+          "3": {
+            "correct": 14,
+            "n": 40,
+            "accuracy": 0.35
+          }
+        },
+        "error_modes": {
+          "n": 120,
+          "counts": {
+            "exact": 67,
+            "query_target_swap": 24,
+            "ignored_transfer": 0,
+            "reversed_transfer": 16,
+            "other_person_quantity": 8,
+            "wrong_arithmetic": 5,
+            "unrelated": 0
+          },
+          "rates": {
+            "exact": 0.5583333333333333,
+            "query_target_swap": 0.2,
+            "ignored_transfer": 0.0,
+            "reversed_transfer": 0.13333333333333333,
+            "other_person_quantity": 0.06666666666666667,
+            "wrong_arithmetic": 0.041666666666666664,
+            "unrelated": 0.0
+          }
+        }
+      },
+      "compositional": {
+        "accuracy": 0.1875,
+        "correct": 15,
+        "n": 80,
+        "mean_updates": 2.0,
+        "by_stage": {
+          "2": {
+            "correct": 7,
+            "n": 40,
+            "accuracy": 0.175
+          },
+          "3": {
+            "correct": 8,
+            "n": 40,
+            "accuracy": 0.2
+          }
+        },
+        "error_modes": {
+          "n": 80,
+          "counts": {
+            "exact": 15,
+            "query_target_swap": 23,
+            "ignored_transfer": 4,
+            "reversed_transfer": 13,
+            "other_person_quantity": 6,
+            "wrong_arithmetic": 16,
+            "unrelated": 3
+          },
+          "rates": {
+            "exact": 0.1875,
+            "query_target_swap": 0.2875,
+            "ignored_transfer": 0.05,
+            "reversed_transfer": 0.1625,
+            "other_person_quantity": 0.075,
+            "wrong_arithmetic": 0.2,
+            "unrelated": 0.0375
+          }
+        }
+      },
+      "unusual": {
+        "accuracy": 0.0,
+        "correct": 0,
+        "n": 3,
+        "mean_updates": 2.3333333333333335,
+        "by_stage": {
+          "99": {
+            "correct": 0,
+            "n": 3,
+            "accuracy": 0.0
+          }
+        },
+        "error_modes": {
+          "n": 3,
+          "counts": {
+            "exact": 0,
+            "query_target_swap": 2,
+            "ignored_transfer": 0,
+            "reversed_transfer": 1,
+            "other_person_quantity": 0,
+            "wrong_arithmetic": 0,
+            "unrelated": 0
+          },
+          "rates": {
+            "exact": 0.0,
+            "query_target_swap": 0.6666666666666666,
+            "ignored_transfer": 0.0,
+            "reversed_transfer": 0.3333333333333333,
+            "other_person_quantity": 0.0,
+            "wrong_arithmetic": 0.0,
+            "unrelated": 0.0
+          }
+        }
+      },
+      "role_probes": {
+        "accuracy": 0.3333333333333333,
+        "correct": 4,
+        "n": 12,
+        "by_family": {
+          "A": {
+            "correct": 0,
+            "n": 3,
+            "accuracy": 0.0,
+            "cases": [
+              {
+                "events": [
+                  "Maya has 8 stickers.",
+                  "Liam gave Maya 3 stickers."
+                ],
+                "question": "How many stickers does Maya have?",
+                "expected": 11,
+                "predicted": 5,
+                "correct": false,
+                "error": "reversed_transfer"
+              },
+              {
+                "events": [
+                  "Priya owns 6 books.",
+                  "Sam handed Priya 4 books."
+                ],
+                "question": "How many books does Priya have?",
+                "expected": 10,
+                "predicted": 0,
+                "correct": false,
+                "error": "query_target_swap"
+              },
+              {
+                "events": [
+                  "Diego currently has 10 marbles.",
+                  "Nora gave Diego 2 marbles."
+                ],
+                "question": "How many marbles does Diego have?",
+                "expected": 12,
+                "predicted": 0,
+                "correct": false,
+                "error": "query_target_swap"
+              }
+            ]
+          },
+          "B": {
+            "correct": 1,
+            "n": 3,
+            "accuracy": 0.3333333333333333,
+            "cases": [
+              {
+                "events": [
+                  "Bob has 5 crayons.",
+                  "Bob gave Rebekah 2 crayons."
+                ],
+                "question": "How many crayons does Bob have?",
+                "expected": 3,
+                "predicted": 3,
+                "correct": true,
+                "error": "exact"
+              },
+              {
+                "events": [
+                  "Maya owns 9 stickers.",
+                  "Maya gave Carlos 4 stickers."
+                ],
+                "question": "How many stickers does Maya have?",
+                "expected": 5,
+                "predicted": 0,
+                "correct": false,
+                "error": "wrong_arithmetic"
+              },
+              {
+                "events": [
+                  "Alice keeps 7 apples.",
+                  "Alice handed Jenny 3 apples."
+                ],
+                "question": "How many apples does Alice have?",
+                "expected": 4,
+                "predicted": 3,
+                "correct": false,
+                "error": "query_target_swap"
+              }
+            ]
+          },
+          "C": {
+            "correct": 1,
+            "n": 3,
+            "accuracy": 0.3333333333333333,
+            "cases": [
+              {
+                "events": [
+                  "Bob has 5 crayons.",
+                  "Bob gave Rebekah 2 crayons."
+                ],
+                "question": "How many crayons does Rebekah have?",
+                "expected": 2,
+                "predicted": 3,
+                "correct": false,
+                "error": "query_target_swap"
+              },
+              {
+                "events": [
+                  "Maya owns 9 stickers.",
+                  "Maya gave Carlos 4 stickers."
+                ],
+                "question": "How many stickers does Carlos have?",
+                "expected": 4,
+                "predicted": 0,
+                "correct": false,
+                "error": "ignored_transfer"
+              },
+              {
+                "events": [
+                  "Alice keeps 7 apples.",
+                  "Alice handed Jenny 3 apples."
+                ],
+                "question": "How many apples does Jenny have?",
+                "expected": 3,
+                "predicted": 3,
+                "correct": true,
+                "error": "exact"
+              }
+            ]
+          },
+          "D": {
+            "correct": 2,
+            "n": 3,
+            "accuracy": 0.6666666666666666,
+            "cases": [
+              {
+                "events": [
+                  "Bob has 5 crayons.",
+                  "Rebekah has 4 crayons.",
+                  "Rebekah gave Bob 2 crayons."
+                ],
+                "question": "How many crayons does Rebekah have?",
+                "expected": 2,
+                "predicted": 3,
+                "correct": false,
+                "error": "wrong_arithmetic"
+              },
+              {
+                "events": [
+                  "Sam owns 6 coins.",
+                  "Priya has 8 coins.",
+                  "Priya gave Sam 3 coins."
+                ],
+                "question": "How many coins does Priya have?",
+                "expected": 5,
+                "predicted": 5,
+                "correct": true,
+                "error": "exact"
+              },
+              {
+                "events": [
+                  "Owen has 10 pencils.",
+                  "Zoe has 5 pencils.",
+                  "Zoe handed Owen 1 pencil."
+                ],
+                "question": "How many pencils does Zoe have?",
+                "expected": 4,
+                "predicted": 4,
+                "correct": true,
+                "error": "exact"
+              }
+            ]
+          }
+        }
+      },
+      "demo": {
+        "title": "Permanent benchmark: Bob / Rebekah",
+        "events": [
+          "Bob owns 5 crayons.",
+          "Rebekah gave Bob 2 crayons."
+        ],
+        "question": "How many crayons does Bob have?",
+        "expected": 7,
+        "predicted": 3,
+        "correct": false,
+        "n_updates": 2,
+        "latency_ms": 10.466600069776177,
+        "error": "reversed_transfer"
+      },
+      "unusual_cases": [
+        {
+          "title": "Unusual probe 1",
+          "events": [
+            "Bob started out with five crayons.",
+            "Rebekah passed a pair of crayons over to Bob."
+          ],
+          "question": "What's Bob's crayon total now?",
+          "expected": 7,
+          "predicted": 0,
+          "correct": false,
+          "n_updates": 2,
+          "latency_ms": 13.424600008875132,
+          "error": "query_target_swap"
+        },
+        {
+          "title": "Unusual probe 2",
+          "events": [
+            "Initially, Maya was in possession of twelve stickers.",
+            "Then Maya let Carlos take three stickers."
+          ],
+          "question": "So how many stickers remain with Maya?",
+          "expected": 9,
+          "predicted": 15,
+          "correct": false,
+          "n_updates": 2,
+          "latency_ms": 15.25309996213764,
+          "error": "reversed_transfer"
+        },
+        {
+          "title": "Unusual probe 3",
+          "events": [
+            "Priya began with 4 books.",
+            "Sam handed Priya 6 books.",
+            "Diego owns 8 marbles."
+          ],
+          "question": "What number of books is Priya sitting on?",
+          "expected": 10,
+          "predicted": 8,
+          "correct": false,
+          "n_updates": 3,
+          "latency_ms": 15.969099942594767,
+          "error": "query_target_swap"
+        }
+      ],
+      "inference_latency_ms": 0.9859608331074318,
+      "rss_mb": 216.046875,
+      "stage1_in_distribution": 1.0,
+      "stage1_heldout": 0.7,
+      "stage2_in_distribution": 0.325,
+      "stage2_heldout": 0.1375,
+      "stage3_in_distribution": 0.35,
+      "stage3_heldout": 0.1375,
+      "heldout_transfer_accuracy": 0.1375,
+      "heldout_transfer_n": 160,
+      "in_distribution_transfer_accuracy": 0.3375,
+      "held_out_transfer_accuracy_per_parameter_MB": 0.29309957878644965,
+      "held_out_transfer_accuracy_per_inference_ms": 0.13945787234432447,
+      "relational_probes": {
+        "accuracy": 0.125,
+        "correct": 1,
+        "n": 8,
+        "by_family": {
+          "R_c": {
+            "correct": 1,
+            "n": 1,
+            "accuracy": 1.0,
+            "cases": [
+              {
+                "events": [
+                  "Carlos has 7 pencils.",
+                  "Carlos gave Diego 3 pencils."
+                ],
+                "question": "How many pencils does Diego have?",
+                "expected": 3,
+                "predicted": 3,
+                "correct": true,
+                "error": "exact"
+              }
+            ]
+          },
+          "R_give": {
+            "correct": 0,
+            "n": 4,
+            "accuracy": 0.0,
+            "cases": [
+              {
+                "events": [
+                  "Nora has 3 cards.",
+                  "Emma has 6 cards.",
+                  "Emma gave Nora 2 cards."
+                ],
+                "question": "How many cards does Emma have?",
+                "expected": 4,
+                "predicted": 5,
+                "correct": false,
+                "error": "query_target_swap"
+              },
+              {
+                "events": [
+                  "Jenny has 8 cookies.",
+                  "Liam has 3 cookies.",
+                  "Jenny gave Liam 2 cookies."
+                ],
+                "question": "How many cookies does Jenny have?",
+                "expected": 6,
+                "predicted": 7,
+                "correct": false,
+                "error": "wrong_arithmetic"
+              },
+              {
+                "events": [
+                  "Carlos has 7 pencils.",
+                  "Carlos gave Diego 3 pencils."
+                ],
+                "question": "How many pencils does Carlos have?",
+                "expected": 4,
+                "predicted": 3,
+                "correct": false,
+                "error": "query_target_swap"
+              },
+              {
+                "events": [
+                  "Priya has 9 buttons.",
+                  "Diego has 5 buttons.",
+                  "Priya gave Diego 4 buttons."
+                ],
+                "question": "How many buttons does Priya have?",
+                "expected": 5,
+                "predicted": 1,
+                "correct": false,
+                "error": "wrong_arithmetic"
+              }
+            ]
+          },
+          "R_recv": {
+            "correct": 0,
+            "n": 3,
+            "accuracy": 0.0,
+            "cases": [
+              {
+                "events": [
+                  "Nora has 3 cards.",
+                  "Emma has 6 cards.",
+                  "Emma gave Nora 2 cards."
+                ],
+                "question": "How many cards does Nora have?",
+                "expected": 5,
+                "predicted": 8,
+                "correct": false,
+                "error": "wrong_arithmetic"
+              },
+              {
+                "events": [
+                  "Jenny has 8 cookies.",
+                  "Liam has 3 cookies.",
+                  "Jenny gave Liam 2 cookies."
+                ],
+                "question": "How many cookies does Liam have?",
+                "expected": 5,
+                "predicted": 7,
+                "correct": false,
+                "error": "wrong_arithmetic"
+              },
+              {
+                "events": [
+                  "Priya has 9 buttons.",
+                  "Diego has 5 buttons.",
+                  "Priya gave Diego 4 buttons."
+                ],
+                "question": "How many buttons does Diego have?",
+                "expected": 9,
+                "predicted": 1,
+                "correct": false,
+                "error": "reversed_transfer"
+              }
+            ]
+          }
+        },
+        "error_modes": {
+          "n": 8,
+          "counts": {
+            "exact": 1,
+            "query_target_swap": 2,
+            "ignored_transfer": 0,
+            "reversed_transfer": 1,
+            "other_person_quantity": 0,
+            "wrong_arithmetic": 4,
+            "unrelated": 0
+          },
+          "rates": {
+            "exact": 0.125,
+            "query_target_swap": 0.25,
+            "ignored_transfer": 0.0,
+            "reversed_transfer": 0.125,
+            "other_person_quantity": 0.0,
+            "wrong_arithmetic": 0.5,
+            "unrelated": 0.0
+          }
+        }
+      },
+      "counterfactual": {
+        "n_pairs": 4,
+        "pair_accuracy": 0.0,
+        "query_collapse_rate": 1.0,
+        "pairs": [
+          {
+            "pair": "bob_rebekah",
+            "events": [
+              "Bob has 5 crayons.",
+              "Rebekah has 4 crayons.",
+              "Rebekah gave Bob 2 crayons."
+            ],
+            "a": {
+              "question": "How many crayons does Bob have?",
+              "expected": 7,
+              "predicted": 3,
+              "correct": false,
+              "top_event": null,
+              "top_token": null,
+              "attention_entropy": null
+            },
+            "b": {
+              "question": "How many crayons does Rebekah have?",
+              "expected": 2,
+              "predicted": 3,
+              "correct": false,
+              "top_event": null,
+              "top_token": null,
+              "attention_entropy": null
+            },
+            "both_correct": false,
+            "attention_cosine": null,
+            "readout_cosine": 1.0,
+            "attn_a_entropy": null,
+            "attn_b_entropy": null,
+            "query_collapse": true
+          },
+          {
+            "pair": "maya_liam",
+            "events": [
+              "Maya has 6 stickers.",
+              "Liam has 9 stickers.",
+              "Liam gave Maya 4 stickers."
+            ],
+            "a": {
+              "question": "How many stickers does Liam have?",
+              "expected": 5,
+              "predicted": 12,
+              "correct": false,
+              "top_event": null,
+              "top_token": null,
+              "attention_entropy": null
+            },
+            "b": {
+              "question": "How many stickers does Maya have?",
+              "expected": 10,
+              "predicted": 12,
+              "correct": false,
+              "top_event": null,
+              "top_token": null,
+              "attention_entropy": null
+            },
+            "both_correct": false,
+            "attention_cosine": null,
+            "readout_cosine": 1.0,
+            "attn_a_entropy": null,
+            "attn_b_entropy": null,
+            "query_collapse": true
+          },
+          {
+            "pair": "alice_jenny",
+            "events": [
+              "Alice has 8 apples.",
+              "Jenny has 3 apples.",
+              "Alice gave Jenny 2 apples."
+            ],
+            "a": {
+              "question": "How many apples does Alice have?",
+              "expected": 6,
+              "predicted": 3,
+              "correct": false,
+              "top_event": null,
+              "top_token": null,
+              "attention_entropy": null
+            },
+            "b": {
+              "question": "How many apples does Jenny have?",
+              "expected": 5,
+              "predicted": 3,
+              "correct": false,
+              "top_event": null,
+              "top_token": null,
+              "attention_entropy": null
+            },
+            "both_correct": false,
+            "attention_cosine": null,
+            "readout_cosine": 1.0,
+            "attn_a_entropy": null,
+            "attn_b_entropy": null,
+            "query_collapse": true
+          },
+          {
+            "pair": "sam_priya",
+            "events": [
+              "Sam has 4 coins.",
+              "Priya has 11 coins.",
+              "Priya gave Sam 5 coins."
+            ],
+            "a": {
+              "question": "How many coins does Priya have?",
+              "expected": 6,
+              "predicted": 9,
+              "correct": false,
+              "top_event": null,
+              "top_token": null,
+              "attention_entropy": null
+            },
+            "b": {
+              "question": "How many coins does Sam have?",
+              "expected": 9,
+              "predicted": 9,
+              "correct": true,
+              "top_event": null,
+              "top_token": null,
+              "attention_entropy": null
+            },
+            "both_correct": false,
+            "attention_cosine": null,
+            "readout_cosine": 1.0,
+            "attn_a_entropy": null,
+            "attn_b_entropy": null,
+            "query_collapse": true
+          }
+        ]
+      }
+    },
+    {
+      "arch": "pointer",
+      "seed": 1337,
+      "config": {
+        "embed_dim": 48,
+        "encoder_hidden": 80,
+        "semantic_dim": 64,
+        "state_dim": 32,
+        "answer_hidden": 96,
+        "max_answer": 64,
+        "inner_steps": 1,
+        "max_bytes": 192,
+        "n_slots": 1,
+        "slot_dim": 32,
+        "n_components": 1,
+        "component_dim": 32,
+        "role_aux": false,
+        "query_pointer": true
+      },
+      "model_path": "experiments\\pointer_models\\pointer_seed1337.pt",
+      "parameter_count": 138274,
+      "parameter_mb": 0.5274734497070312,
+      "training_seconds": 445.2267721000826,
+      "mean_recurrent_updates": 1.6666666666666667,
+      "role_cd_accuracy": 0.3333333333333333,
+      "traces": [
+        {
+          "name": "demo",
+          "question": "How many crayons does Bob have?",
+          "expected": 7,
+          "predicted": 7,
+          "n_updates": 2,
+          "top_event": 0,
+          "top_token": 9,
+          "attention_entropy": 0.8823599219322205
+        },
+        {
+          "name": "C",
+          "question": "How many crayons does Rebekah have?",
+          "expected": 2,
+          "predicted": 0,
+          "n_updates": 2,
+          "top_event": 0,
+          "top_token": 8,
+          "attention_entropy": 0.9386519193649292
+        },
+        {
+          "name": "D",
+          "question": "How many crayons does Rebekah have?",
+          "expected": 2,
+          "predicted": 6,
+          "n_updates": 3,
+          "top_event": 2,
+          "top_token": 50,
+          "attention_entropy": 0.9520701169967651
+        }
+      ],
+      "heldout": {
+        "accuracy": 0.4166666666666667,
+        "correct": 100,
+        "n": 240,
+        "mean_updates": 1.6666666666666667,
+        "by_stage": {
+          "1": {
+            "correct": 43,
+            "n": 80,
+            "accuracy": 0.5375
+          },
+          "2": {
+            "correct": 27,
+            "n": 80,
+            "accuracy": 0.3375
+          },
+          "3": {
+            "correct": 30,
+            "n": 80,
+            "accuracy": 0.375
+          }
+        },
+        "error_modes": {
+          "n": 240,
+          "counts": {
+            "exact": 100,
+            "query_target_swap": 23,
+            "ignored_transfer": 7,
+            "reversed_transfer": 34,
+            "other_person_quantity": 10,
+            "wrong_arithmetic": 22,
+            "unrelated": 44
+          },
+          "rates": {
+            "exact": 0.4166666666666667,
+            "query_target_swap": 0.09583333333333334,
+            "ignored_transfer": 0.029166666666666667,
+            "reversed_transfer": 0.14166666666666666,
+            "other_person_quantity": 0.041666666666666664,
+            "wrong_arithmetic": 0.09166666666666666,
+            "unrelated": 0.18333333333333332
+          }
+        },
+        "transfer_error_modes": {
+          "n": 160,
+          "counts": {
+            "exact": 57,
+            "query_target_swap": 23,
+            "ignored_transfer": 7,
+            "reversed_transfer": 34,
+            "other_person_quantity": 10,
+            "wrong_arithmetic": 22,
+            "unrelated": 7
+          },
+          "rates": {
+            "exact": 0.35625,
+            "query_target_swap": 0.14375,
+            "ignored_transfer": 0.04375,
+            "reversed_transfer": 0.2125,
+            "other_person_quantity": 0.0625,
+            "wrong_arithmetic": 0.1375,
+            "unrelated": 0.04375
+          }
+        }
+      },
+      "in_distribution": {
+        "accuracy": 0.6916666666666667,
+        "correct": 83,
+        "n": 120,
+        "mean_updates": 1.6666666666666667,
+        "by_stage": {
+          "1": {
+            "correct": 40,
+            "n": 40,
+            "accuracy": 1.0
+          },
+          "2": {
+            "correct": 22,
+            "n": 40,
+            "accuracy": 0.55
+          },
+          "3": {
+            "correct": 21,
+            "n": 40,
+            "accuracy": 0.525
+          }
+        },
+        "error_modes": {
+          "n": 120,
+          "counts": {
+            "exact": 83,
+            "query_target_swap": 11,
+            "ignored_transfer": 2,
+            "reversed_transfer": 17,
+            "other_person_quantity": 1,
+            "wrong_arithmetic": 4,
+            "unrelated": 2
+          },
+          "rates": {
+            "exact": 0.6916666666666667,
+            "query_target_swap": 0.09166666666666666,
+            "ignored_transfer": 0.016666666666666666,
+            "reversed_transfer": 0.14166666666666666,
+            "other_person_quantity": 0.008333333333333333,
+            "wrong_arithmetic": 0.03333333333333333,
+            "unrelated": 0.016666666666666666
+          }
+        }
+      },
+      "compositional": {
+        "accuracy": 0.375,
+        "correct": 30,
+        "n": 80,
+        "mean_updates": 2.0,
+        "by_stage": {
+          "2": {
+            "correct": 15,
+            "n": 40,
+            "accuracy": 0.375
+          },
+          "3": {
+            "correct": 15,
+            "n": 40,
+            "accuracy": 0.375
+          }
+        },
+        "error_modes": {
+          "n": 80,
+          "counts": {
+            "exact": 30,
+            "query_target_swap": 20,
+            "ignored_transfer": 1,
+            "reversed_transfer": 20,
+            "other_person_quantity": 5,
+            "wrong_arithmetic": 3,
+            "unrelated": 1
+          },
+          "rates": {
+            "exact": 0.375,
+            "query_target_swap": 0.25,
+            "ignored_transfer": 0.0125,
+            "reversed_transfer": 0.25,
+            "other_person_quantity": 0.0625,
+            "wrong_arithmetic": 0.0375,
+            "unrelated": 0.0125
+          }
+        }
+      },
+      "unusual": {
+        "accuracy": 0.3333333333333333,
+        "correct": 1,
+        "n": 3,
+        "mean_updates": 2.3333333333333335,
+        "by_stage": {
+          "99": {
+            "correct": 1,
+            "n": 3,
+            "accuracy": 0.3333333333333333
+          }
+        },
+        "error_modes": {
+          "n": 3,
+          "counts": {
+            "exact": 1,
+            "query_target_swap": 0,
+            "ignored_transfer": 0,
+            "reversed_transfer": 1,
+            "other_person_quantity": 0,
+            "wrong_arithmetic": 0,
+            "unrelated": 1
+          },
+          "rates": {
+            "exact": 0.3333333333333333,
+            "query_target_swap": 0.0,
+            "ignored_transfer": 0.0,
+            "reversed_transfer": 0.3333333333333333,
+            "other_person_quantity": 0.0,
+            "wrong_arithmetic": 0.0,
+            "unrelated": 0.3333333333333333
+          }
+        }
+      },
+      "role_probes": {
+        "accuracy": 0.4166666666666667,
+        "correct": 5,
+        "n": 12,
+        "by_family": {
+          "A": {
+            "correct": 2,
+            "n": 3,
+            "accuracy": 0.6666666666666666,
+            "cases": [
+              {
+                "events": [
+                  "Maya has 8 stickers.",
+                  "Liam gave Maya 3 stickers."
+                ],
+                "question": "How many stickers does Maya have?",
+                "expected": 11,
+                "predicted": 5,
+                "correct": false,
+                "error": "reversed_transfer"
+              },
+              {
+                "events": [
+                  "Priya owns 6 books.",
+                  "Sam handed Priya 4 books."
+                ],
+                "question": "How many books does Priya have?",
+                "expected": 10,
+                "predicted": 10,
+                "correct": true,
+                "error": "exact"
+              },
+              {
+                "events": [
+                  "Diego currently has 10 marbles.",
+                  "Nora gave Diego 2 marbles."
+                ],
+                "question": "How many marbles does Diego have?",
+                "expected": 12,
+                "predicted": 12,
+                "correct": true,
+                "error": "exact"
+              }
+            ]
+          },
+          "B": {
+            "correct": 1,
+            "n": 3,
+            "accuracy": 0.3333333333333333,
+            "cases": [
+              {
+                "events": [
+                  "Bob has 5 crayons.",
+                  "Bob gave Rebekah 2 crayons."
+                ],
+                "question": "How many crayons does Bob have?",
+                "expected": 3,
+                "predicted": 7,
+                "correct": false,
+                "error": "reversed_transfer"
+              },
+              {
+                "events": [
+                  "Maya owns 9 stickers.",
+                  "Maya gave Carlos 4 stickers."
+                ],
+                "question": "How many stickers does Maya have?",
+                "expected": 5,
+                "predicted": 13,
+                "correct": false,
+                "error": "reversed_transfer"
+              },
+              {
+                "events": [
+                  "Alice keeps 7 apples.",
+                  "Alice handed Jenny 3 apples."
+                ],
+                "question": "How many apples does Alice have?",
+                "expected": 4,
+                "predicted": 4,
+                "correct": true,
+                "error": "exact"
+              }
+            ]
+          },
+          "C": {
+            "correct": 1,
+            "n": 3,
+            "accuracy": 0.3333333333333333,
+            "cases": [
+              {
+                "events": [
+                  "Bob has 5 crayons.",
+                  "Bob gave Rebekah 2 crayons."
+                ],
+                "question": "How many crayons does Rebekah have?",
+                "expected": 2,
+                "predicted": 0,
+                "correct": false,
+                "error": "ignored_transfer"
+              },
+              {
+                "events": [
+                  "Maya owns 9 stickers.",
+                  "Maya gave Carlos 4 stickers."
+                ],
+                "question": "How many stickers does Carlos have?",
+                "expected": 4,
+                "predicted": 13,
+                "correct": false,
+                "error": "wrong_arithmetic"
+              },
+              {
+                "events": [
+                  "Alice keeps 7 apples.",
+                  "Alice handed Jenny 3 apples."
+                ],
+                "question": "How many apples does Jenny have?",
+                "expected": 3,
+                "predicted": 3,
+                "correct": true,
+                "error": "exact"
+              }
+            ]
+          },
+          "D": {
+            "correct": 1,
+            "n": 3,
+            "accuracy": 0.3333333333333333,
+            "cases": [
+              {
+                "events": [
+                  "Bob has 5 crayons.",
+                  "Rebekah has 4 crayons.",
+                  "Rebekah gave Bob 2 crayons."
+                ],
+                "question": "How many crayons does Rebekah have?",
+                "expected": 2,
+                "predicted": 6,
+                "correct": false,
+                "error": "reversed_transfer"
+              },
+              {
+                "events": [
+                  "Sam owns 6 coins.",
+                  "Priya has 8 coins.",
+                  "Priya gave Sam 3 coins."
+                ],
+                "question": "How many coins does Priya have?",
+                "expected": 5,
+                "predicted": 5,
+                "correct": true,
+                "error": "exact"
+              },
+              {
+                "events": [
+                  "Owen has 10 pencils.",
+                  "Zoe has 5 pencils.",
+                  "Zoe handed Owen 1 pencil."
+                ],
+                "question": "How many pencils does Zoe have?",
+                "expected": 4,
+                "predicted": 6,
+                "correct": false,
+                "error": "reversed_transfer"
+              }
+            ]
+          }
+        }
+      },
+      "demo": {
+        "title": "Permanent benchmark: Bob / Rebekah",
+        "events": [
+          "Bob owns 5 crayons.",
+          "Rebekah gave Bob 2 crayons."
+        ],
+        "question": "How many crayons does Bob have?",
+        "expected": 7,
+        "predicted": 7,
+        "correct": true,
+        "n_updates": 2,
+        "latency_ms": 14.191300026141107,
+        "error": "exact"
+      },
+      "unusual_cases": [
+        {
+          "title": "Unusual probe 1",
+          "events": [
+            "Bob started out with five crayons.",
+            "Rebekah passed a pair of crayons over to Bob."
+          ],
+          "question": "What's Bob's crayon total now?",
+          "expected": 7,
+          "predicted": 7,
+          "correct": true,
+          "n_updates": 2,
+          "latency_ms": 18.487200024537742,
+          "error": "exact"
+        },
+        {
+          "title": "Unusual probe 2",
+          "events": [
+            "Initially, Maya was in possession of twelve stickers.",
+            "Then Maya let Carlos take three stickers."
+          ],
+          "question": "So how many stickers remain with Maya?",
+          "expected": 9,
+          "predicted": 13,
+          "correct": false,
+          "n_updates": 2,
+          "latency_ms": 21.32370008621365,
+          "error": "unrelated"
+        },
+        {
+          "title": "Unusual probe 3",
+          "events": [
+            "Priya began with 4 books.",
+            "Sam handed Priya 6 books.",
+            "Diego owns 8 marbles."
+          ],
+          "question": "What number of books is Priya sitting on?",
+          "expected": 10,
+          "predicted": 0,
+          "correct": false,
+          "n_updates": 3,
+          "latency_ms": 19.443800090812147,
+          "error": "reversed_transfer"
+        }
+      ],
+      "inference_latency_ms": 1.5586783333371084,
+      "rss_mb": 327.26171875,
+      "stage1_in_distribution": 1.0,
+      "stage1_heldout": 0.5375,
+      "stage2_in_distribution": 0.55,
+      "stage2_heldout": 0.3375,
+      "stage3_in_distribution": 0.525,
+      "stage3_heldout": 0.375,
+      "heldout_transfer_accuracy": 0.35625,
+      "heldout_transfer_n": 160,
+      "in_distribution_transfer_accuracy": 0.5375,
+      "held_out_transfer_accuracy_per_parameter_MB": 0.6753894441471282,
+      "held_out_transfer_accuracy_per_inference_ms": 0.2285590248998161,
+      "relational_probes": {
+        "accuracy": 0.625,
+        "correct": 5,
+        "n": 8,
+        "by_family": {
+          "R_c": {
+            "correct": 0,
+            "n": 1,
+            "accuracy": 0.0,
+            "cases": [
+              {
+                "events": [
+                  "Carlos has 7 pencils.",
+                  "Carlos gave Diego 3 pencils."
+                ],
+                "question": "How many pencils does Diego have?",
+                "expected": 3,
+                "predicted": 0,
+                "correct": false,
+                "error": "ignored_transfer"
+              }
+            ]
+          },
+          "R_give": {
+            "correct": 3,
+            "n": 4,
+            "accuracy": 0.75,
+            "cases": [
+              {
+                "events": [
+                  "Nora has 3 cards.",
+                  "Emma has 6 cards.",
+                  "Emma gave Nora 2 cards."
+                ],
+                "question": "How many cards does Emma have?",
+                "expected": 4,
+                "predicted": 0,
+                "correct": false,
+                "error": "wrong_arithmetic"
+              },
+              {
+                "events": [
+                  "Jenny has 8 cookies.",
+                  "Liam has 3 cookies.",
+                  "Jenny gave Liam 2 cookies."
+                ],
+                "question": "How many cookies does Jenny have?",
+                "expected": 6,
+                "predicted": 6,
+                "correct": true,
+                "error": "exact"
+              },
+              {
+                "events": [
+                  "Carlos has 7 pencils.",
+                  "Carlos gave Diego 3 pencils."
+                ],
+                "question": "How many pencils does Carlos have?",
+                "expected": 4,
+                "predicted": 4,
+                "correct": true,
+                "error": "exact"
+              },
+              {
+                "events": [
+                  "Priya has 9 buttons.",
+                  "Diego has 5 buttons.",
+                  "Priya gave Diego 4 buttons."
+                ],
+                "question": "How many buttons does Priya have?",
+                "expected": 5,
+                "predicted": 5,
+                "correct": true,
+                "error": "exact"
+              }
+            ]
+          },
+          "R_recv": {
+            "correct": 2,
+            "n": 3,
+            "accuracy": 0.6666666666666666,
+            "cases": [
+              {
+                "events": [
+                  "Nora has 3 cards.",
+                  "Emma has 6 cards.",
+                  "Emma gave Nora 2 cards."
+                ],
+                "question": "How many cards does Nora have?",
+                "expected": 5,
+                "predicted": 0,
+                "correct": false,
+                "error": "unrelated"
+              },
+              {
+                "events": [
+                  "Jenny has 8 cookies.",
+                  "Liam has 3 cookies.",
+                  "Jenny gave Liam 2 cookies."
+                ],
+                "question": "How many cookies does Liam have?",
+                "expected": 5,
+                "predicted": 5,
+                "correct": true,
+                "error": "exact"
+              },
+              {
+                "events": [
+                  "Priya has 9 buttons.",
+                  "Diego has 5 buttons.",
+                  "Priya gave Diego 4 buttons."
+                ],
+                "question": "How many buttons does Diego have?",
+                "expected": 9,
+                "predicted": 9,
+                "correct": true,
+                "error": "exact"
+              }
+            ]
+          }
+        },
+        "error_modes": {
+          "n": 8,
+          "counts": {
+            "exact": 5,
+            "query_target_swap": 0,
+            "ignored_transfer": 1,
+            "reversed_transfer": 0,
+            "other_person_quantity": 0,
+            "wrong_arithmetic": 1,
+            "unrelated": 1
+          },
+          "rates": {
+            "exact": 0.625,
+            "query_target_swap": 0.0,
+            "ignored_transfer": 0.125,
+            "reversed_transfer": 0.0,
+            "other_person_quantity": 0.0,
+            "wrong_arithmetic": 0.125,
+            "unrelated": 0.125
+          }
+        }
+      },
+      "counterfactual": {
+        "n_pairs": 4,
+        "pair_accuracy": 0.0,
+        "query_collapse_rate": 0.75,
+        "pairs": [
+          {
+            "pair": "bob_rebekah",
+            "events": [
+              "Bob has 5 crayons.",
+              "Rebekah has 4 crayons.",
+              "Rebekah gave Bob 2 crayons."
+            ],
+            "a": {
+              "question": "How many crayons does Bob have?",
+              "expected": 7,
+              "predicted": 7,
+              "correct": true,
+              "top_event": 0,
+              "top_token": 8,
+              "attention_entropy": 0.8796370029449463
+            },
+            "b": {
+              "question": "How many crayons does Rebekah have?",
+              "expected": 2,
+              "predicted": 6,
+              "correct": false,
+              "top_event": 2,
+              "top_token": 50,
+              "attention_entropy": 0.9520701169967651
+            },
+            "both_correct": false,
+            "attention_cosine": 0.8244507312774658,
+            "readout_cosine": 0.8743740916252136,
+            "attn_a_entropy": 0.8796370029449463,
+            "attn_b_entropy": 0.9520701169967651,
+            "query_collapse": false
+          },
+          {
+            "pair": "maya_liam",
+            "events": [
+              "Maya has 6 stickers.",
+              "Liam has 9 stickers.",
+              "Liam gave Maya 4 stickers."
+            ],
+            "a": {
+              "question": "How many stickers does Liam have?",
+              "expected": 5,
+              "predicted": 4,
+              "correct": false,
+              "top_event": 1,
+              "top_token": 29,
+              "attention_entropy": 0.9508625268936157
+            },
+            "b": {
+              "question": "How many stickers does Maya have?",
+              "expected": 10,
+              "predicted": 4,
+              "correct": false,
+              "top_event": 1,
+              "top_token": 29,
+              "attention_entropy": 0.9436199069023132
+            },
+            "both_correct": false,
+            "attention_cosine": 0.9968825578689575,
+            "readout_cosine": 0.9987177848815918,
+            "attn_a_entropy": 0.9508625268936157,
+            "attn_b_entropy": 0.9436199069023132,
+            "query_collapse": true
+          },
+          {
+            "pair": "alice_jenny",
+            "events": [
+              "Alice has 8 apples.",
+              "Jenny has 3 apples.",
+              "Alice gave Jenny 2 apples."
+            ],
+            "a": {
+              "question": "How many apples does Alice have?",
+              "expected": 6,
+              "predicted": 5,
+              "correct": false,
+              "top_event": 0,
+              "top_token": 10,
+              "attention_entropy": 0.9687104821205139
+            },
+            "b": {
+              "question": "How many apples does Jenny have?",
+              "expected": 5,
+              "predicted": 5,
+              "correct": true,
+              "top_event": 1,
+              "top_token": 29,
+              "attention_entropy": 0.9324917793273926
+            },
+            "both_correct": false,
+            "attention_cosine": 0.9685837030410767,
+            "readout_cosine": 0.9928845167160034,
+            "attn_a_entropy": 0.9687104821205139,
+            "attn_b_entropy": 0.9324917793273926,
+            "query_collapse": true
+          },
+          {
+            "pair": "sam_priya",
+            "events": [
+              "Sam has 4 coins.",
+              "Priya has 11 coins.",
+              "Priya gave Sam 5 coins."
+            ],
+            "a": {
+              "question": "How many coins does Priya have?",
+              "expected": 6,
+              "predicted": 5,
+              "correct": false,
+              "top_event": 1,
+              "top_token": 26,
+              "attention_entropy": 0.9529430866241455
+            },
+            "b": {
+              "question": "How many coins does Sam have?",
+              "expected": 9,
+              "predicted": 9,
+              "correct": true,
+              "top_event": 0,
+              "top_token": 8,
+              "attention_entropy": 0.9373910427093506
+            },
+            "both_correct": false,
+            "attention_cosine": 0.865336000919342,
+            "readout_cosine": 0.9021977186203003,
+            "attn_a_entropy": 0.9529430866241455,
+            "attn_b_entropy": 0.9373910427093506,
+            "query_collapse": true
+          }
+        ]
+      }
+    },
+    {
+      "arch": "single_sym",
+      "seed": 2024,
+      "config": {
+        "embed_dim": 48,
+        "encoder_hidden": 80,
+        "semantic_dim": 64,
+        "state_dim": 32,
+        "answer_hidden": 96,
+        "max_answer": 64,
+        "inner_steps": 1,
+        "max_bytes": 192,
+        "n_slots": 1,
+        "slot_dim": 32,
+        "n_components": 1,
+        "component_dim": 32,
+        "role_aux": false,
+        "query_pointer": false
+      },
+      "model_path": "experiments\\relational_models\\single_sym_seed2024.pt",
+      "parameter_count": 122978,
+      "parameter_mb": 0.46912384033203125,
+      "training_seconds": 293.80197650007904,
+      "mean_recurrent_updates": 1.6666666666666667,
+      "role_cd_accuracy": 0.16666666666666666,
+      "traces": [],
+      "heldout": {
+        "accuracy": 0.3958333333333333,
+        "correct": 95,
+        "n": 240,
+        "mean_updates": 1.6666666666666667,
+        "by_stage": {
+          "1": {
+            "correct": 62,
+            "n": 80,
+            "accuracy": 0.775
+          },
+          "2": {
+            "correct": 16,
+            "n": 80,
+            "accuracy": 0.2
+          },
+          "3": {
+            "correct": 17,
+            "n": 80,
+            "accuracy": 0.2125
+          }
+        },
+        "error_modes": {
+          "n": 240,
+          "counts": {
+            "exact": 95,
+            "query_target_swap": 65,
+            "ignored_transfer": 1,
+            "reversed_transfer": 18,
+            "other_person_quantity": 16,
+            "wrong_arithmetic": 24,
+            "unrelated": 21
+          },
+          "rates": {
+            "exact": 0.3958333333333333,
+            "query_target_swap": 0.2708333333333333,
+            "ignored_transfer": 0.004166666666666667,
+            "reversed_transfer": 0.075,
+            "other_person_quantity": 0.06666666666666667,
+            "wrong_arithmetic": 0.1,
+            "unrelated": 0.0875
+          }
+        },
+        "transfer_error_modes": {
+          "n": 160,
+          "counts": {
+            "exact": 33,
+            "query_target_swap": 65,
+            "ignored_transfer": 1,
+            "reversed_transfer": 18,
+            "other_person_quantity": 16,
+            "wrong_arithmetic": 24,
+            "unrelated": 3
+          },
+          "rates": {
+            "exact": 0.20625,
+            "query_target_swap": 0.40625,
+            "ignored_transfer": 0.00625,
+            "reversed_transfer": 0.1125,
+            "other_person_quantity": 0.1,
+            "wrong_arithmetic": 0.15,
+            "unrelated": 0.01875
+          }
+        }
+      },
+      "in_distribution": {
+        "accuracy": 0.5583333333333333,
+        "correct": 67,
+        "n": 120,
+        "mean_updates": 1.6666666666666667,
+        "by_stage": {
+          "1": {
+            "correct": 40,
+            "n": 40,
+            "accuracy": 1.0
+          },
+          "2": {
+            "correct": 11,
+            "n": 40,
+            "accuracy": 0.275
+          },
+          "3": {
+            "correct": 16,
+            "n": 40,
+            "accuracy": 0.4
+          }
+        },
+        "error_modes": {
+          "n": 120,
+          "counts": {
+            "exact": 67,
+            "query_target_swap": 27,
+            "ignored_transfer": 1,
+            "reversed_transfer": 11,
+            "other_person_quantity": 3,
+            "wrong_arithmetic": 10,
+            "unrelated": 1
+          },
+          "rates": {
+            "exact": 0.5583333333333333,
+            "query_target_swap": 0.225,
+            "ignored_transfer": 0.008333333333333333,
+            "reversed_transfer": 0.09166666666666666,
+            "other_person_quantity": 0.025,
+            "wrong_arithmetic": 0.08333333333333333,
+            "unrelated": 0.008333333333333333
+          }
+        }
+      },
+      "compositional": {
+        "accuracy": 0.2125,
+        "correct": 17,
+        "n": 80,
+        "mean_updates": 2.0,
+        "by_stage": {
+          "2": {
+            "correct": 9,
+            "n": 40,
+            "accuracy": 0.225
+          },
+          "3": {
+            "correct": 8,
+            "n": 40,
+            "accuracy": 0.2
+          }
+        },
+        "error_modes": {
+          "n": 80,
+          "counts": {
+            "exact": 17,
+            "query_target_swap": 37,
+            "ignored_transfer": 0,
+            "reversed_transfer": 11,
+            "other_person_quantity": 1,
+            "wrong_arithmetic": 12,
+            "unrelated": 2
+          },
+          "rates": {
+            "exact": 0.2125,
+            "query_target_swap": 0.4625,
+            "ignored_transfer": 0.0,
+            "reversed_transfer": 0.1375,
+            "other_person_quantity": 0.0125,
+            "wrong_arithmetic": 0.15,
+            "unrelated": 0.025
+          }
+        }
+      },
+      "unusual": {
+        "accuracy": 0.3333333333333333,
+        "correct": 1,
+        "n": 3,
+        "mean_updates": 2.3333333333333335,
+        "by_stage": {
+          "99": {
+            "correct": 1,
+            "n": 3,
+            "accuracy": 0.3333333333333333
+          }
+        },
+        "error_modes": {
+          "n": 3,
+          "counts": {
+            "exact": 1,
+            "query_target_swap": 0,
+            "ignored_transfer": 0,
+            "reversed_transfer": 1,
+            "other_person_quantity": 0,
+            "wrong_arithmetic": 0,
+            "unrelated": 1
+          },
+          "rates": {
+            "exact": 0.3333333333333333,
+            "query_target_swap": 0.0,
+            "ignored_transfer": 0.0,
+            "reversed_transfer": 0.3333333333333333,
+            "other_person_quantity": 0.0,
+            "wrong_arithmetic": 0.0,
+            "unrelated": 0.3333333333333333
+          }
+        }
+      },
+      "role_probes": {
+        "accuracy": 0.3333333333333333,
+        "correct": 4,
+        "n": 12,
+        "by_family": {
+          "A": {
+            "correct": 1,
+            "n": 3,
+            "accuracy": 0.3333333333333333,
+            "cases": [
+              {
+                "events": [
+                  "Maya has 8 stickers.",
+                  "Liam gave Maya 3 stickers."
+                ],
+                "question": "How many stickers does Maya have?",
+                "expected": 11,
+                "predicted": 5,
+                "correct": false,
+                "error": "reversed_transfer"
+              },
+              {
+                "events": [
+                  "Priya owns 6 books.",
+                  "Sam handed Priya 4 books."
+                ],
+                "question": "How many books does Priya have?",
+                "expected": 10,
+                "predicted": 0,
+                "correct": false,
+                "error": "query_target_swap"
+              },
+              {
+                "events": [
+                  "Diego currently has 10 marbles.",
+                  "Nora gave Diego 2 marbles."
+                ],
+                "question": "How many marbles does Diego have?",
+                "expected": 12,
+                "predicted": 12,
+                "correct": true,
+                "error": "exact"
+              }
+            ]
+          },
+          "B": {
+            "correct": 2,
+            "n": 3,
+            "accuracy": 0.6666666666666666,
+            "cases": [
+              {
+                "events": [
+                  "Bob has 5 crayons.",
+                  "Bob gave Rebekah 2 crayons."
+                ],
+                "question": "How many crayons does Bob have?",
+                "expected": 3,
+                "predicted": 3,
+                "correct": true,
+                "error": "exact"
+              },
+              {
+                "events": [
+                  "Maya owns 9 stickers.",
+                  "Maya gave Carlos 4 stickers."
+                ],
+                "question": "How many stickers does Maya have?",
+                "expected": 5,
+                "predicted": 5,
+                "correct": true,
+                "error": "exact"
+              },
+              {
+                "events": [
+                  "Alice keeps 7 apples.",
+                  "Alice handed Jenny 3 apples."
+                ],
+                "question": "How many apples does Alice have?",
+                "expected": 4,
+                "predicted": 10,
+                "correct": false,
+                "error": "reversed_transfer"
+              }
+            ]
+          },
+          "C": {
+            "correct": 0,
+            "n": 3,
+            "accuracy": 0.0,
+            "cases": [
+              {
+                "events": [
+                  "Bob has 5 crayons.",
+                  "Bob gave Rebekah 2 crayons."
+                ],
+                "question": "How many crayons does Rebekah have?",
+                "expected": 2,
+                "predicted": 3,
+                "correct": false,
+                "error": "query_target_swap"
+              },
+              {
+                "events": [
+                  "Maya owns 9 stickers.",
+                  "Maya gave Carlos 4 stickers."
+                ],
+                "question": "How many stickers does Carlos have?",
+                "expected": 4,
+                "predicted": 5,
+                "correct": false,
+                "error": "query_target_swap"
+              },
+              {
+                "events": [
+                  "Alice keeps 7 apples.",
+                  "Alice handed Jenny 3 apples."
+                ],
+                "question": "How many apples does Jenny have?",
+                "expected": 3,
+                "predicted": 4,
+                "correct": false,
+                "error": "query_target_swap"
+              }
+            ]
+          },
+          "D": {
+            "correct": 1,
+            "n": 3,
+            "accuracy": 0.3333333333333333,
+            "cases": [
+              {
+                "events": [
+                  "Bob has 5 crayons.",
+                  "Rebekah has 4 crayons.",
+                  "Rebekah gave Bob 2 crayons."
+                ],
+                "question": "How many crayons does Rebekah have?",
+                "expected": 2,
+                "predicted": 7,
+                "correct": false,
+                "error": "query_target_swap"
+              },
+              {
+                "events": [
+                  "Sam owns 6 coins.",
+                  "Priya has 8 coins.",
+                  "Priya gave Sam 3 coins."
+                ],
+                "question": "How many coins does Priya have?",
+                "expected": 5,
+                "predicted": 5,
+                "correct": true,
+                "error": "exact"
+              },
+              {
+                "events": [
+                  "Owen has 10 pencils.",
+                  "Zoe has 5 pencils.",
+                  "Zoe handed Owen 1 pencil."
+                ],
+                "question": "How many pencils does Zoe have?",
+                "expected": 4,
+                "predicted": 6,
+                "correct": false,
+                "error": "reversed_transfer"
+              }
+            ]
+          }
+        }
+      },
+      "demo": {
+        "title": "Permanent benchmark: Bob / Rebekah",
+        "events": [
+          "Bob owns 5 crayons.",
+          "Rebekah gave Bob 2 crayons."
+        ],
+        "question": "How many crayons does Bob have?",
+        "expected": 7,
+        "predicted": 3,
+        "correct": false,
+        "n_updates": 2,
+        "latency_ms": 8.869600016623735,
+        "error": "reversed_transfer"
+      },
+      "unusual_cases": [
+        {
+          "title": "Unusual probe 1",
+          "events": [
+            "Bob started out with five crayons.",
+            "Rebekah passed a pair of crayons over to Bob."
+          ],
+          "question": "What's Bob's crayon total now?",
+          "expected": 7,
+          "predicted": 4,
+          "correct": false,
+          "n_updates": 2,
+          "latency_ms": 11.305100051686168,
+          "error": "unrelated"
+        },
+        {
+          "title": "Unusual probe 2",
+          "events": [
+            "Initially, Maya was in possession of twelve stickers.",
+            "Then Maya let Carlos take three stickers."
+          ],
+          "question": "So how many stickers remain with Maya?",
+          "expected": 9,
+          "predicted": 9,
+          "correct": true,
+          "n_updates": 2,
+          "latency_ms": 14.30469995830208,
+          "error": "exact"
+        },
+        {
+          "title": "Unusual probe 3",
+          "events": [
+            "Priya began with 4 books.",
+            "Sam handed Priya 6 books.",
+            "Diego owns 8 marbles."
+          ],
+          "question": "What number of books is Priya sitting on?",
+          "expected": 10,
+          "predicted": 0,
+          "correct": false,
+          "n_updates": 3,
+          "latency_ms": 7.598600001074374,
+          "error": "reversed_transfer"
+        }
+      ],
+      "inference_latency_ms": 0.9968908333879275,
+      "rss_mb": 218.66796875,
+      "stage1_in_distribution": 1.0,
+      "stage1_heldout": 0.775,
+      "stage2_in_distribution": 0.275,
+      "stage2_heldout": 0.2,
+      "stage3_in_distribution": 0.4,
+      "stage3_heldout": 0.2125,
+      "heldout_transfer_accuracy": 0.20625,
+      "heldout_transfer_n": 160,
+      "in_distribution_transfer_accuracy": 0.3375,
+      "held_out_transfer_accuracy_per_parameter_MB": 0.43964936817967437,
+      "held_out_transfer_accuracy_per_inference_ms": 0.20689326563377117,
+      "relational_probes": {
+        "accuracy": 0.375,
+        "correct": 3,
+        "n": 8,
+        "by_family": {
+          "R_c": {
+            "correct": 1,
+            "n": 1,
+            "accuracy": 1.0,
+            "cases": [
+              {
+                "events": [
+                  "Carlos has 7 pencils.",
+                  "Carlos gave Diego 3 pencils."
+                ],
+                "question": "How many pencils does Diego have?",
+                "expected": 3,
+                "predicted": 3,
+                "correct": true,
+                "error": "exact"
+              }
+            ]
+          },
+          "R_give": {
+            "correct": 1,
+            "n": 4,
+            "accuracy": 0.25,
+            "cases": [
+              {
+                "events": [
+                  "Nora has 3 cards.",
+                  "Emma has 6 cards.",
+                  "Emma gave Nora 2 cards."
+                ],
+                "question": "How many cards does Emma have?",
+                "expected": 4,
+                "predicted": 5,
+                "correct": false,
+                "error": "query_target_swap"
+              },
+              {
+                "events": [
+                  "Jenny has 8 cookies.",
+                  "Liam has 3 cookies.",
+                  "Jenny gave Liam 2 cookies."
+                ],
+                "question": "How many cookies does Jenny have?",
+                "expected": 6,
+                "predicted": 6,
+                "correct": true,
+                "error": "exact"
+              },
+              {
+                "events": [
+                  "Carlos has 7 pencils.",
+                  "Carlos gave Diego 3 pencils."
+                ],
+                "question": "How many pencils does Carlos have?",
+                "expected": 4,
+                "predicted": 3,
+                "correct": false,
+                "error": "query_target_swap"
+              },
+              {
+                "events": [
+                  "Priya has 9 buttons.",
+                  "Diego has 5 buttons.",
+                  "Priya gave Diego 4 buttons."
+                ],
+                "question": "How many buttons does Priya have?",
+                "expected": 5,
+                "predicted": 13,
+                "correct": false,
+                "error": "reversed_transfer"
+              }
+            ]
+          },
+          "R_recv": {
+            "correct": 1,
+            "n": 3,
+            "accuracy": 0.3333333333333333,
+            "cases": [
+              {
+                "events": [
+                  "Nora has 3 cards.",
+                  "Emma has 6 cards.",
+                  "Emma gave Nora 2 cards."
+                ],
+                "question": "How many cards does Nora have?",
+                "expected": 5,
+                "predicted": 5,
+                "correct": true,
+                "error": "exact"
+              },
+              {
+                "events": [
+                  "Jenny has 8 cookies.",
+                  "Liam has 3 cookies.",
+                  "Jenny gave Liam 2 cookies."
+                ],
+                "question": "How many cookies does Liam have?",
+                "expected": 5,
+                "predicted": 6,
+                "correct": false,
+                "error": "query_target_swap"
+              },
+              {
+                "events": [
+                  "Priya has 9 buttons.",
+                  "Diego has 5 buttons.",
+                  "Priya gave Diego 4 buttons."
+                ],
+                "question": "How many buttons does Diego have?",
+                "expected": 9,
+                "predicted": 13,
+                "correct": false,
+                "error": "wrong_arithmetic"
+              }
+            ]
+          }
+        },
+        "error_modes": {
+          "n": 8,
+          "counts": {
+            "exact": 3,
+            "query_target_swap": 3,
+            "ignored_transfer": 0,
+            "reversed_transfer": 1,
+            "other_person_quantity": 0,
+            "wrong_arithmetic": 1,
+            "unrelated": 0
+          },
+          "rates": {
+            "exact": 0.375,
+            "query_target_swap": 0.375,
+            "ignored_transfer": 0.0,
+            "reversed_transfer": 0.125,
+            "other_person_quantity": 0.0,
+            "wrong_arithmetic": 0.125,
+            "unrelated": 0.0
+          }
+        }
+      },
+      "counterfactual": {
+        "n_pairs": 4,
+        "pair_accuracy": 0.0,
+        "query_collapse_rate": 1.0,
+        "pairs": [
+          {
+            "pair": "bob_rebekah",
+            "events": [
+              "Bob has 5 crayons.",
+              "Rebekah has 4 crayons.",
+              "Rebekah gave Bob 2 crayons."
+            ],
+            "a": {
+              "question": "How many crayons does Bob have?",
+              "expected": 7,
+              "predicted": 7,
+              "correct": true,
+              "top_event": null,
+              "top_token": null,
+              "attention_entropy": null
+            },
+            "b": {
+              "question": "How many crayons does Rebekah have?",
+              "expected": 2,
+              "predicted": 7,
+              "correct": false,
+              "top_event": null,
+              "top_token": null,
+              "attention_entropy": null
+            },
+            "both_correct": false,
+            "attention_cosine": null,
+            "readout_cosine": 1.0,
+            "attn_a_entropy": null,
+            "attn_b_entropy": null,
+            "query_collapse": true
+          },
+          {
+            "pair": "maya_liam",
+            "events": [
+              "Maya has 6 stickers.",
+              "Liam has 9 stickers.",
+              "Liam gave Maya 4 stickers."
+            ],
+            "a": {
+              "question": "How many stickers does Liam have?",
+              "expected": 5,
+              "predicted": 10,
+              "correct": false,
+              "top_event": null,
+              "top_token": null,
+              "attention_entropy": null
+            },
+            "b": {
+              "question": "How many stickers does Maya have?",
+              "expected": 10,
+              "predicted": 10,
+              "correct": true,
+              "top_event": null,
+              "top_token": null,
+              "attention_entropy": null
+            },
+            "both_correct": false,
+            "attention_cosine": null,
+            "readout_cosine": 1.0,
+            "attn_a_entropy": null,
+            "attn_b_entropy": null,
+            "query_collapse": true
+          },
+          {
+            "pair": "alice_jenny",
+            "events": [
+              "Alice has 8 apples.",
+              "Jenny has 3 apples.",
+              "Alice gave Jenny 2 apples."
+            ],
+            "a": {
+              "question": "How many apples does Alice have?",
+              "expected": 6,
+              "predicted": 6,
+              "correct": true,
+              "top_event": null,
+              "top_token": null,
+              "attention_entropy": null
+            },
+            "b": {
+              "question": "How many apples does Jenny have?",
+              "expected": 5,
+              "predicted": 6,
+              "correct": false,
+              "top_event": null,
+              "top_token": null,
+              "attention_entropy": null
+            },
+            "both_correct": false,
+            "attention_cosine": null,
+            "readout_cosine": 1.0,
+            "attn_a_entropy": null,
+            "attn_b_entropy": null,
+            "query_collapse": true
+          },
+          {
+            "pair": "sam_priya",
+            "events": [
+              "Sam has 4 coins.",
+              "Priya has 11 coins.",
+              "Priya gave Sam 5 coins."
+            ],
+            "a": {
+              "question": "How many coins does Priya have?",
+              "expected": 6,
+              "predicted": 5,
+              "correct": false,
+              "top_event": null,
+              "top_token": null,
+              "attention_entropy": null
+            },
+            "b": {
+              "question": "How many coins does Sam have?",
+              "expected": 9,
+              "predicted": 5,
+              "correct": false,
+              "top_event": null,
+              "top_token": null,
+              "attention_entropy": null
+            },
+            "both_correct": false,
+            "attention_cosine": null,
+            "readout_cosine": 1.0,
+            "attn_a_entropy": null,
+            "attn_b_entropy": null,
+            "query_collapse": true
+          }
+        ]
+      }
+    },
+    {
+      "arch": "pointer",
+      "seed": 2024,
+      "config": {
+        "embed_dim": 48,
+        "encoder_hidden": 80,
+        "semantic_dim": 64,
+        "state_dim": 32,
+        "answer_hidden": 96,
+        "max_answer": 64,
+        "inner_steps": 1,
+        "max_bytes": 192,
+        "n_slots": 1,
+        "slot_dim": 32,
+        "n_components": 1,
+        "component_dim": 32,
+        "role_aux": false,
+        "query_pointer": true
+      },
+      "model_path": "experiments\\pointer_models\\pointer_seed2024.pt",
+      "parameter_count": 138274,
+      "parameter_mb": 0.5274734497070312,
+      "training_seconds": 392.38284600002225,
+      "mean_recurrent_updates": 1.6666666666666667,
+      "role_cd_accuracy": 0.16666666666666666,
+      "traces": [
+        {
+          "name": "demo",
+          "question": "How many crayons does Bob have?",
+          "expected": 7,
+          "predicted": 0,
+          "n_updates": 2,
+          "top_event": 1,
+          "top_token": 29,
+          "attention_entropy": 2.1964931420370704e-06
+        },
+        {
+          "name": "C",
+          "question": "How many crayons does Rebekah have?",
+          "expected": 2,
+          "predicted": 0,
+          "n_updates": 2,
+          "top_event": 1,
+          "top_token": 24,
+          "attention_entropy": 2.9564030228357296e-06
+        },
+        {
+          "name": "D",
+          "question": "How many crayons does Rebekah have?",
+          "expected": 2,
+          "predicted": 0,
+          "n_updates": 3,
+          "top_event": 2,
+          "top_token": 50,
+          "attention_entropy": 2.9177147098380374e-06
+        }
+      ],
+      "heldout": {
+        "accuracy": 0.23333333333333334,
+        "correct": 56,
+        "n": 240,
+        "mean_updates": 1.6666666666666667,
+        "by_stage": {
+          "1": {
+            "correct": 51,
+            "n": 80,
+            "accuracy": 0.6375
+          },
+          "2": {
+            "correct": 1,
+            "n": 80,
+            "accuracy": 0.0125
+          },
+          "3": {
+            "correct": 4,
+            "n": 80,
+            "accuracy": 0.05
+          }
+        },
+        "error_modes": {
+          "n": 240,
+          "counts": {
+            "exact": 56,
+            "query_target_swap": 49,
+            "ignored_transfer": 27,
+            "reversed_transfer": 6,
+            "other_person_quantity": 21,
+            "wrong_arithmetic": 43,
+            "unrelated": 38
+          },
+          "rates": {
+            "exact": 0.23333333333333334,
+            "query_target_swap": 0.20416666666666666,
+            "ignored_transfer": 0.1125,
+            "reversed_transfer": 0.025,
+            "other_person_quantity": 0.0875,
+            "wrong_arithmetic": 0.17916666666666667,
+            "unrelated": 0.15833333333333333
+          }
+        },
+        "transfer_error_modes": {
+          "n": 160,
+          "counts": {
+            "exact": 5,
+            "query_target_swap": 49,
+            "ignored_transfer": 27,
+            "reversed_transfer": 6,
+            "other_person_quantity": 21,
+            "wrong_arithmetic": 43,
+            "unrelated": 9
+          },
+          "rates": {
+            "exact": 0.03125,
+            "query_target_swap": 0.30625,
+            "ignored_transfer": 0.16875,
+            "reversed_transfer": 0.0375,
+            "other_person_quantity": 0.13125,
+            "wrong_arithmetic": 0.26875,
+            "unrelated": 0.05625
+          }
+        }
+      },
+      "in_distribution": {
+        "accuracy": 0.35,
+        "correct": 42,
+        "n": 120,
+        "mean_updates": 1.6666666666666667,
+        "by_stage": {
+          "1": {
+            "correct": 40,
+            "n": 40,
+            "accuracy": 1.0
+          },
+          "2": {
+            "correct": 0,
+            "n": 40,
+            "accuracy": 0.0
+          },
+          "3": {
+            "correct": 2,
+            "n": 40,
+            "accuracy": 0.05
+          }
+        },
+        "error_modes": {
+          "n": 120,
+          "counts": {
+            "exact": 42,
+            "query_target_swap": 40,
+            "ignored_transfer": 0,
+            "reversed_transfer": 2,
+            "other_person_quantity": 13,
+            "wrong_arithmetic": 22,
+            "unrelated": 1
+          },
+          "rates": {
+            "exact": 0.35,
+            "query_target_swap": 0.3333333333333333,
+            "ignored_transfer": 0.0,
+            "reversed_transfer": 0.016666666666666666,
+            "other_person_quantity": 0.10833333333333334,
+            "wrong_arithmetic": 0.18333333333333332,
+            "unrelated": 0.008333333333333333
+          }
+        }
+      },
+      "compositional": {
+        "accuracy": 0.0125,
+        "correct": 1,
+        "n": 80,
+        "mean_updates": 2.0,
+        "by_stage": {
+          "2": {
+            "correct": 0,
+            "n": 40,
+            "accuracy": 0.0
+          },
+          "3": {
+            "correct": 1,
+            "n": 40,
+            "accuracy": 0.025
+          }
+        },
+        "error_modes": {
+          "n": 80,
+          "counts": {
+            "exact": 1,
+            "query_target_swap": 46,
+            "ignored_transfer": 1,
+            "reversed_transfer": 2,
+            "other_person_quantity": 10,
+            "wrong_arithmetic": 20,
+            "unrelated": 0
+          },
+          "rates": {
+            "exact": 0.0125,
+            "query_target_swap": 0.575,
+            "ignored_transfer": 0.0125,
+            "reversed_transfer": 0.025,
+            "other_person_quantity": 0.125,
+            "wrong_arithmetic": 0.25,
+            "unrelated": 0.0
+          }
+        }
+      },
+      "unusual": {
+        "accuracy": 0.0,
+        "correct": 0,
+        "n": 3,
+        "mean_updates": 2.3333333333333335,
+        "by_stage": {
+          "99": {
+            "correct": 0,
+            "n": 3,
+            "accuracy": 0.0
+          }
+        },
+        "error_modes": {
+          "n": 3,
+          "counts": {
+            "exact": 0,
+            "query_target_swap": 1,
+            "ignored_transfer": 0,
+            "reversed_transfer": 1,
+            "other_person_quantity": 0,
+            "wrong_arithmetic": 0,
+            "unrelated": 1
+          },
+          "rates": {
+            "exact": 0.0,
+            "query_target_swap": 0.3333333333333333,
+            "ignored_transfer": 0.0,
+            "reversed_transfer": 0.3333333333333333,
+            "other_person_quantity": 0.0,
+            "wrong_arithmetic": 0.0,
+            "unrelated": 0.3333333333333333
+          }
+        }
+      },
+      "role_probes": {
+        "accuracy": 0.08333333333333333,
+        "correct": 1,
+        "n": 12,
+        "by_family": {
+          "A": {
+            "correct": 0,
+            "n": 3,
+            "accuracy": 0.0,
+            "cases": [
+              {
+                "events": [
+                  "Maya has 8 stickers.",
+                  "Liam gave Maya 3 stickers."
+                ],
+                "question": "How many stickers does Maya have?",
+                "expected": 11,
+                "predicted": 3,
+                "correct": false,
+                "error": "other_person_quantity"
+              },
+              {
+                "events": [
+                  "Priya owns 6 books.",
+                  "Sam handed Priya 4 books."
+                ],
+                "question": "How many books does Priya have?",
+                "expected": 10,
+                "predicted": 4,
+                "correct": false,
+                "error": "other_person_quantity"
+              },
+              {
+                "events": [
+                  "Diego currently has 10 marbles.",
+                  "Nora gave Diego 2 marbles."
+                ],
+                "question": "How many marbles does Diego have?",
+                "expected": 12,
+                "predicted": 0,
+                "correct": false,
+                "error": "query_target_swap"
+              }
+            ]
+          },
+          "B": {
+            "correct": 0,
+            "n": 3,
+            "accuracy": 0.0,
+            "cases": [
+              {
+                "events": [
+                  "Bob has 5 crayons.",
+                  "Bob gave Rebekah 2 crayons."
+                ],
+                "question": "How many crayons does Bob have?",
+                "expected": 3,
+                "predicted": 0,
+                "correct": false,
+                "error": "wrong_arithmetic"
+              },
+              {
+                "events": [
+                  "Maya owns 9 stickers.",
+                  "Maya gave Carlos 4 stickers."
+                ],
+                "question": "How many stickers does Maya have?",
+                "expected": 5,
+                "predicted": 0,
+                "correct": false,
+                "error": "wrong_arithmetic"
+              },
+              {
+                "events": [
+                  "Alice keeps 7 apples.",
+                  "Alice handed Jenny 3 apples."
+                ],
+                "question": "How many apples does Alice have?",
+                "expected": 4,
+                "predicted": 3,
+                "correct": false,
+                "error": "query_target_swap"
+              }
+            ]
+          },
+          "C": {
+            "correct": 1,
+            "n": 3,
+            "accuracy": 0.3333333333333333,
+            "cases": [
+              {
+                "events": [
+                  "Bob has 5 crayons.",
+                  "Bob gave Rebekah 2 crayons."
+                ],
+                "question": "How many crayons does Rebekah have?",
+                "expected": 2,
+                "predicted": 0,
+                "correct": false,
+                "error": "ignored_transfer"
+              },
+              {
+                "events": [
+                  "Maya owns 9 stickers.",
+                  "Maya gave Carlos 4 stickers."
+                ],
+                "question": "How many stickers does Carlos have?",
+                "expected": 4,
+                "predicted": 0,
+                "correct": false,
+                "error": "ignored_transfer"
+              },
+              {
+                "events": [
+                  "Alice keeps 7 apples.",
+                  "Alice handed Jenny 3 apples."
+                ],
+                "question": "How many apples does Jenny have?",
+                "expected": 3,
+                "predicted": 3,
+                "correct": true,
+                "error": "exact"
+              }
+            ]
+          },
+          "D": {
+            "correct": 0,
+            "n": 3,
+            "accuracy": 0.0,
+            "cases": [
+              {
+                "events": [
+                  "Bob has 5 crayons.",
+                  "Rebekah has 4 crayons.",
+                  "Rebekah gave Bob 2 crayons."
+                ],
+                "question": "How many crayons does Rebekah have?",
+                "expected": 2,
+                "predicted": 0,
+                "correct": false,
+                "error": "wrong_arithmetic"
+              },
+              {
+                "events": [
+                  "Sam owns 6 coins.",
+                  "Priya has 8 coins.",
+                  "Priya gave Sam 3 coins."
+                ],
+                "question": "How many coins does Priya have?",
+                "expected": 5,
+                "predicted": 3,
+                "correct": false,
+                "error": "other_person_quantity"
+              },
+              {
+                "events": [
+                  "Owen has 10 pencils.",
+                  "Zoe has 5 pencils.",
+                  "Zoe handed Owen 1 pencil."
+                ],
+                "question": "How many pencils does Zoe have?",
+                "expected": 4,
+                "predicted": 1,
+                "correct": false,
+                "error": "other_person_quantity"
+              }
+            ]
+          }
+        }
+      },
+      "demo": {
+        "title": "Permanent benchmark: Bob / Rebekah",
+        "events": [
+          "Bob owns 5 crayons.",
+          "Rebekah gave Bob 2 crayons."
+        ],
+        "question": "How many crayons does Bob have?",
+        "expected": 7,
+        "predicted": 0,
+        "correct": false,
+        "n_updates": 2,
+        "latency_ms": 13.705100049264729,
+        "error": "query_target_swap"
+      },
+      "unusual_cases": [
+        {
+          "title": "Unusual probe 1",
+          "events": [
+            "Bob started out with five crayons.",
+            "Rebekah passed a pair of crayons over to Bob."
+          ],
+          "question": "What's Bob's crayon total now?",
+          "expected": 7,
+          "predicted": 4,
+          "correct": false,
+          "n_updates": 2,
+          "latency_ms": 14.871399966068566,
+          "error": "unrelated"
+        },
+        {
+          "title": "Unusual probe 2",
+          "events": [
+            "Initially, Maya was in possession of twelve stickers.",
+            "Then Maya let Carlos take three stickers."
+          ],
+          "question": "So how many stickers remain with Maya?",
+          "expected": 9,
+          "predicted": 3,
+          "correct": false,
+          "n_updates": 2,
+          "latency_ms": 13.986799982376397,
+          "error": "query_target_swap"
+        },
+        {
+          "title": "Unusual probe 3",
+          "events": [
+            "Priya began with 4 books.",
+            "Sam handed Priya 6 books.",
+            "Diego owns 8 marbles."
+          ],
+          "question": "What number of books is Priya sitting on?",
+          "expected": 10,
+          "predicted": 0,
+          "correct": false,
+          "n_updates": 3,
+          "latency_ms": 10.742700076662004,
+          "error": "reversed_transfer"
+        }
+      ],
+      "inference_latency_ms": 1.519992500349569,
+      "rss_mb": 328.23046875,
+      "stage1_in_distribution": 1.0,
+      "stage1_heldout": 0.6375,
+      "stage2_in_distribution": 0.0,
+      "stage2_heldout": 0.0125,
+      "stage3_in_distribution": 0.05,
+      "stage3_heldout": 0.05,
+      "heldout_transfer_accuracy": 0.03125,
+      "heldout_transfer_n": 160,
+      "in_distribution_transfer_accuracy": 0.025,
+      "held_out_transfer_accuracy_per_parameter_MB": 0.05924468808308142,
+      "held_out_transfer_accuracy_per_inference_ms": 0.020559311965561083,
+      "relational_probes": {
+        "accuracy": 0.125,
+        "correct": 1,
+        "n": 8,
+        "by_family": {
+          "R_c": {
+            "correct": 1,
+            "n": 1,
+            "accuracy": 1.0,
+            "cases": [
+              {
+                "events": [
+                  "Carlos has 7 pencils.",
+                  "Carlos gave Diego 3 pencils."
+                ],
+                "question": "How many pencils does Diego have?",
+                "expected": 3,
+                "predicted": 3,
+                "correct": true,
+                "error": "exact"
+              }
+            ]
+          },
+          "R_give": {
+            "correct": 0,
+            "n": 4,
+            "accuracy": 0.0,
+            "cases": [
+              {
+                "events": [
+                  "Nora has 3 cards.",
+                  "Emma has 6 cards.",
+                  "Emma gave Nora 2 cards."
+                ],
+                "question": "How many cards does Emma have?",
+                "expected": 4,
+                "predicted": 0,
+                "correct": false,
+                "error": "wrong_arithmetic"
+              },
+              {
+                "events": [
+                  "Jenny has 8 cookies.",
+                  "Liam has 3 cookies.",
+                  "Jenny gave Liam 2 cookies."
+                ],
+                "question": "How many cookies does Jenny have?",
+                "expected": 6,
+                "predicted": 0,
+                "correct": false,
+                "error": "wrong_arithmetic"
+              },
+              {
+                "events": [
+                  "Carlos has 7 pencils.",
+                  "Carlos gave Diego 3 pencils."
+                ],
+                "question": "How many pencils does Carlos have?",
+                "expected": 4,
+                "predicted": 3,
+                "correct": false,
+                "error": "query_target_swap"
+              },
+              {
+                "events": [
+                  "Priya has 9 buttons.",
+                  "Diego has 5 buttons.",
+                  "Priya gave Diego 4 buttons."
+                ],
+                "question": "How many buttons does Priya have?",
+                "expected": 5,
+                "predicted": 4,
+                "correct": false,
+                "error": "other_person_quantity"
+              }
+            ]
+          },
+          "R_recv": {
+            "correct": 0,
+            "n": 3,
+            "accuracy": 0.0,
+            "cases": [
+              {
+                "events": [
+                  "Nora has 3 cards.",
+                  "Emma has 6 cards.",
+                  "Emma gave Nora 2 cards."
+                ],
+                "question": "How many cards does Nora have?",
+                "expected": 5,
+                "predicted": 0,
+                "correct": false,
+                "error": "unrelated"
+              },
+              {
+                "events": [
+                  "Jenny has 8 cookies.",
+                  "Liam has 3 cookies.",
+                  "Jenny gave Liam 2 cookies."
+                ],
+                "question": "How many cookies does Liam have?",
+                "expected": 5,
+                "predicted": 0,
+                "correct": false,
+                "error": "unrelated"
+              },
+              {
+                "events": [
+                  "Priya has 9 buttons.",
+                  "Diego has 5 buttons.",
+                  "Priya gave Diego 4 buttons."
+                ],
+                "question": "How many buttons does Diego have?",
+                "expected": 9,
+                "predicted": 4,
+                "correct": false,
+                "error": "other_person_quantity"
+              }
+            ]
+          }
+        },
+        "error_modes": {
+          "n": 8,
+          "counts": {
+            "exact": 1,
+            "query_target_swap": 1,
+            "ignored_transfer": 0,
+            "reversed_transfer": 0,
+            "other_person_quantity": 2,
+            "wrong_arithmetic": 2,
+            "unrelated": 2
+          },
+          "rates": {
+            "exact": 0.125,
+            "query_target_swap": 0.125,
+            "ignored_transfer": 0.0,
+            "reversed_transfer": 0.0,
+            "other_person_quantity": 0.25,
+            "wrong_arithmetic": 0.25,
+            "unrelated": 0.25
+          }
+        }
+      },
+      "counterfactual": {
+        "n_pairs": 4,
+        "pair_accuracy": 0.0,
+        "query_collapse_rate": 1.0,
+        "pairs": [
+          {
+            "pair": "bob_rebekah",
+            "events": [
+              "Bob has 5 crayons.",
+              "Rebekah has 4 crayons.",
+              "Rebekah gave Bob 2 crayons."
+            ],
+            "a": {
+              "question": "How many crayons does Bob have?",
+              "expected": 7,
+              "predicted": 0,
+              "correct": false,
+              "top_event": 2,
+              "top_token": 50,
+              "attention_entropy": 2.920053248089971e-06
+            },
+            "b": {
+              "question": "How many crayons does Rebekah have?",
+              "expected": 2,
+              "predicted": 0,
+              "correct": false,
+              "top_event": 2,
+              "top_token": 50,
+              "attention_entropy": 2.9177147098380374e-06
+            },
+            "both_correct": false,
+            "attention_cosine": 1.0,
+            "readout_cosine": 1.0000001192092896,
+            "attn_a_entropy": 2.920053248089971e-06,
+            "attn_b_entropy": 2.9177147098380374e-06,
+            "query_collapse": true
+          },
+          {
+            "pair": "maya_liam",
+            "events": [
+              "Maya has 6 stickers.",
+              "Liam has 9 stickers.",
+              "Liam gave Maya 4 stickers."
+            ],
+            "a": {
+              "question": "How many stickers does Liam have?",
+              "expected": 5,
+              "predicted": 4,
+              "correct": false,
+              "top_event": 2,
+              "top_token": 47,
+              "attention_entropy": 2.97571205010172e-06
+            },
+            "b": {
+              "question": "How many stickers does Maya have?",
+              "expected": 10,
+              "predicted": 4,
+              "correct": false,
+              "top_event": 2,
+              "top_token": 47,
+              "attention_entropy": 2.9058985546726035e-06
+            },
+            "both_correct": false,
+            "attention_cosine": 1.0,
+            "readout_cosine": 1.0,
+            "attn_a_entropy": 2.97571205010172e-06,
+            "attn_b_entropy": 2.9058985546726035e-06,
+            "query_collapse": true
+          },
+          {
+            "pair": "alice_jenny",
+            "events": [
+              "Alice has 8 apples.",
+              "Jenny has 3 apples.",
+              "Alice gave Jenny 2 apples."
+            ],
+            "a": {
+              "question": "How many apples does Alice have?",
+              "expected": 6,
+              "predicted": 0,
+              "correct": false,
+              "top_event": 2,
+              "top_token": 46,
+              "attention_entropy": 2.790419557641144e-06
+            },
+            "b": {
+              "question": "How many apples does Jenny have?",
+              "expected": 5,
+              "predicted": 0,
+              "correct": false,
+              "top_event": 2,
+              "top_token": 46,
+              "attention_entropy": 2.9054087917756988e-06
+            },
+            "both_correct": false,
+            "attention_cosine": 1.0,
+            "readout_cosine": 1.0,
+            "attn_a_entropy": 2.790419557641144e-06,
+            "attn_b_entropy": 2.9054087917756988e-06,
+            "query_collapse": true
+          },
+          {
+            "pair": "sam_priya",
+            "events": [
+              "Sam has 4 coins.",
+              "Priya has 11 coins.",
+              "Priya gave Sam 5 coins."
+            ],
+            "a": {
+              "question": "How many coins does Priya have?",
+              "expected": 6,
+              "predicted": 0,
+              "correct": false,
+              "top_event": 2,
+              "top_token": 43,
+              "attention_entropy": 2.5368452043039724e-05
+            },
+            "b": {
+              "question": "How many coins does Sam have?",
+              "expected": 9,
+              "predicted": 0,
+              "correct": false,
+              "top_event": 2,
+              "top_token": 43,
+              "attention_entropy": 2.2143056412460282e-05
+            },
+            "both_correct": false,
+            "attention_cosine": 1.0,
+            "readout_cosine": 0.9999999403953552,
+            "attn_a_entropy": 2.5368452043039724e-05,
+            "attn_b_entropy": 2.2143056412460282e-05,
+            "query_collapse": true
+          }
+        ]
+      }
+    }
+  ],
+  "table": [
+    {
+      "arch": "single_sym",
+      "query_pointer": false,
+      "symmetric": true,
+      "seed": 1337,
+      "parameter_count": 122978,
+      "parameter_mb": 0.4691,
+      "rss_mb": 216.05,
+      "training_seconds": 463.5,
+      "inference_latency_ms": 0.986,
+      "stage1_heldout": 70.0,
+      "stage2_heldout": 13.75,
+      "stage3_heldout": 13.75,
+      "heldout_transfer_accuracy": 13.75,
+      "compositional_accuracy": 18.75,
+      "bob_predicted": 3,
+      "bob_correct": false,
+      "bob_error": "reversed_transfer",
+      "unusual_correct": 0,
+      "unusual_n": 3,
+      "role_A": 0.0,
+      "role_B": 33.33,
+      "role_C": 33.33,
+      "role_D": 66.67,
+      "role_CD": 50.0,
+      "relational_probe_accuracy": 12.5,
+      "cf_pair_accuracy": 0.0,
+      "query_collapse_rate": 100.0,
+      "held_out_transfer_accuracy_per_parameter_MB": 0.2931,
+      "C_D_role_accuracy_per_parameter_MB": 1.0658,
+      "ignored_transfer": 7,
+      "reversed_transfer": 12,
+      "query_target_swap": 55,
+      "other_person_quantity": 16,
+      "wrong_arithmetic": 35,
+      "unrelated": 13
+    },
+    {
+      "arch": "pointer",
+      "query_pointer": true,
+      "symmetric": true,
+      "seed": 1337,
+      "parameter_count": 138274,
+      "parameter_mb": 0.5275,
+      "rss_mb": 327.26,
+      "training_seconds": 445.2,
+      "inference_latency_ms": 1.559,
+      "stage1_heldout": 53.75,
+      "stage2_heldout": 33.75,
+      "stage3_heldout": 37.5,
+      "heldout_transfer_accuracy": 35.62,
+      "compositional_accuracy": 37.5,
+      "bob_predicted": 7,
+      "bob_correct": true,
+      "bob_error": "exact",
+      "unusual_correct": 1,
+      "unusual_n": 3,
+      "role_A": 66.67,
+      "role_B": 33.33,
+      "role_C": 33.33,
+      "role_D": 33.33,
+      "role_CD": 33.33,
+      "relational_probe_accuracy": 62.5,
+      "cf_pair_accuracy": 0.0,
+      "query_collapse_rate": 75.0,
+      "held_out_transfer_accuracy_per_parameter_MB": 0.6754,
+      "C_D_role_accuracy_per_parameter_MB": 0.6319,
+      "ignored_transfer": 7,
+      "reversed_transfer": 34,
+      "query_target_swap": 23,
+      "other_person_quantity": 10,
+      "wrong_arithmetic": 22,
+      "unrelated": 7
+    },
+    {
+      "arch": "single_sym",
+      "query_pointer": false,
+      "symmetric": true,
+      "seed": 2024,
+      "parameter_count": 122978,
+      "parameter_mb": 0.4691,
+      "rss_mb": 218.67,
+      "training_seconds": 293.8,
+      "inference_latency_ms": 0.997,
+      "stage1_heldout": 77.5,
+      "stage2_heldout": 20.0,
+      "stage3_heldout": 21.25,
+      "heldout_transfer_accuracy": 20.62,
+      "compositional_accuracy": 21.25,
+      "bob_predicted": 3,
+      "bob_correct": false,
+      "bob_error": "reversed_transfer",
+      "unusual_correct": 1,
+      "unusual_n": 3,
+      "role_A": 33.33,
+      "role_B": 66.67,
+      "role_C": 0.0,
+      "role_D": 33.33,
+      "role_CD": 16.67,
+      "relational_probe_accuracy": 37.5,
+      "cf_pair_accuracy": 0.0,
+      "query_collapse_rate": 100.0,
+      "held_out_transfer_accuracy_per_parameter_MB": 0.4396,
+      "C_D_role_accuracy_per_parameter_MB": 0.3553,
+      "ignored_transfer": 1,
+      "reversed_transfer": 18,
+      "query_target_swap": 65,
+      "other_person_quantity": 16,
+      "wrong_arithmetic": 24,
+      "unrelated": 3
+    },
+    {
+      "arch": "pointer",
+      "query_pointer": true,
+      "symmetric": true,
+      "seed": 2024,
+      "parameter_count": 138274,
+      "parameter_mb": 0.5275,
+      "rss_mb": 328.23,
+      "training_seconds": 392.4,
+      "inference_latency_ms": 1.52,
+      "stage1_heldout": 63.75,
+      "stage2_heldout": 1.25,
+      "stage3_heldout": 5.0,
+      "heldout_transfer_accuracy": 3.12,
+      "compositional_accuracy": 1.25,
+      "bob_predicted": 0,
+      "bob_correct": false,
+      "bob_error": "query_target_swap",
+      "unusual_correct": 0,
+      "unusual_n": 3,
+      "role_A": 0.0,
+      "role_B": 0.0,
+      "role_C": 33.33,
+      "role_D": 0.0,
+      "role_CD": 16.67,
+      "relational_probe_accuracy": 12.5,
+      "cf_pair_accuracy": 0.0,
+      "query_collapse_rate": 100.0,
+      "held_out_transfer_accuracy_per_parameter_MB": 0.0592,
+      "C_D_role_accuracy_per_parameter_MB": 0.316,
+      "ignored_transfer": 27,
+      "reversed_transfer": 6,
+      "query_target_swap": 49,
+      "other_person_quantity": 21,
+      "wrong_arithmetic": 43,
+      "unrelated": 9
+    }
+  ]
+}

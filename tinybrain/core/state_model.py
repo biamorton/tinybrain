@@ -5,6 +5,7 @@ from dataclasses import asdict, dataclass
 import torch
 from torch import nn
 
+from tinybrain.core.query_pointer import QueryPointerReadout
 from tinybrain.core.relational import (
     RelationalDecomposer,
     RelationalWorkingMemory,
@@ -30,6 +31,7 @@ class StateModelConfig:
     n_components: int = 1
     component_dim: int = 32
     role_aux: bool = False
+    query_pointer: bool = False
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -143,9 +145,14 @@ class SemanticStateModel(nn.Module):
             raise ValueError("n_components must be >= 1")
         if cfg.n_components > 1 and cfg.n_slots > 1:
             raise ValueError("n_components>1 cannot be combined with n_slots>1")
+        if cfg.query_pointer and (cfg.n_slots > 1 or cfg.n_components > 1):
+            raise ValueError("query_pointer cannot be combined with slots or components")
         self.use_slots = cfg.n_slots > 1
         self.use_relational = cfg.n_components > 1
-        if self.use_relational:
+        self.use_pointer = bool(cfg.query_pointer)
+        if self.use_pointer:
+            read_dim = cfg.state_dim
+        elif self.use_relational:
             read_dim = cfg.component_dim
         elif self.use_slots:
             read_dim = cfg.slot_dim
@@ -155,7 +162,17 @@ class SemanticStateModel(nn.Module):
             cfg.embed_dim, cfg.encoder_hidden, cfg.semantic_dim
         )
         self.relational = None
-        if self.use_relational:
+        self.pointer = None
+        encoder_dim = cfg.encoder_hidden * 2
+        if self.use_pointer:
+            self.pointer = QueryPointerReadout(encoder_dim, cfg.state_dim)
+            self.memory = None
+            self.init_state = None
+            self.init_slots = None
+            self.init_components = None
+            mention_in = encoder_dim
+            answer_q_dim = cfg.state_dim
+        elif self.use_relational:
             encoder_dim = cfg.encoder_hidden * 2
             self.relational = RelationalDecomposer(
                 encoder_dim, cfg.n_components, cfg.component_dim
@@ -169,20 +186,24 @@ class SemanticStateModel(nn.Module):
             self.init_slots = None
             self.init_state = None
             mention_in = cfg.component_dim
+            self.pointer = None
         elif self.use_slots:
             self.memory = MultiSlotMemory(cfg.semantic_dim, cfg.slot_dim, cfg.n_slots)
             self.init_slots = nn.Parameter(0.02 * torch.randn(cfg.n_slots, cfg.slot_dim))
             self.init_state = None
             self.init_components = None
             mention_in = cfg.semantic_dim
+            self.pointer = None
         else:
             self.memory = WorkingMemoryCell(cfg.semantic_dim, cfg.state_dim)
             self.init_state = nn.Parameter(torch.zeros(cfg.state_dim))
             self.init_slots = None
             self.init_components = None
             mention_in = cfg.semantic_dim
+            self.pointer = None
+        answer_in = cfg.state_dim if self.use_pointer else cfg.semantic_dim
         self.answer_head = AnswerHead(
-            cfg.semantic_dim,
+            answer_in,
             read_dim,
             cfg.answer_hidden,
             cfg.max_answer + 1,
@@ -242,8 +263,12 @@ class SemanticStateModel(nn.Module):
             memory = self.init_components.unsqueeze(0).expand(batch_size, -1, -1).contiguous()
         elif self.use_slots:
             slots = self.init_slots.unsqueeze(0).expand(batch_size, -1, -1).contiguous()
-        else:
+        elif not self.use_pointer:
             state = self.init_state.unsqueeze(0).expand(batch_size, -1).contiguous()
+
+        pointer_token_chunks: list[torch.Tensor] = []
+        pointer_mask_chunks: list[torch.Tensor] = []
+        pointer_event_index: list[torch.Tensor] = []
 
         for step in range(max_events):
             step_texts = []
@@ -255,7 +280,19 @@ class SemanticStateModel(nn.Module):
                 else:
                     step_texts.append("")
                     mask_vals.append(0.0)
-            if self.use_relational:
+            if self.use_pointer:
+                seq, token_mask = self.encode_sequences(step_texts)
+                exist = torch.tensor(mask_vals, device=device, dtype=torch.bool).unsqueeze(1)
+                token_mask = token_mask & exist
+                denom = token_mask.sum(dim=1, keepdim=True).clamp_min(1).to(seq.dtype)
+                mention_feat = (seq * token_mask.unsqueeze(-1).to(seq.dtype)).sum(dim=1) / denom
+                mention_steps.append(self.mention_head(mention_feat))
+                pointer_token_chunks.append(seq)
+                pointer_mask_chunks.append(token_mask)
+                pointer_event_index.append(
+                    torch.full((batch_size, seq.size(1)), step, device=device, dtype=torch.long)
+                )
+            elif self.use_relational:
                 seq, token_mask = self.encode_sequences(step_texts)
                 components, token_attn = self.relational.decompose(seq, token_mask)
                 related, rel_attn = self.relational.relate(components)
@@ -301,21 +338,59 @@ class SemanticStateModel(nn.Module):
                         updated = self.memory(semantic, updated)
                     state = updated * mask.unsqueeze(-1) + state * (1.0 - mask.unsqueeze(-1))
 
-        question_sem = self.encode_texts(questions)
         question_attn = None
-        if self.use_relational:
-            read_weights, readout = self.memory.read(memory, question_sem)
+        pointer_trace = {}
+        question_sem = None
+        if self.use_pointer:
+            event_tokens = torch.cat(pointer_token_chunks, dim=1)
+            event_mask = torch.cat(pointer_mask_chunks, dim=1)
+            event_ids = torch.cat(pointer_event_index, dim=1)
+            q_seq, q_mask = self.encode_sequences(questions)
+            query, q_pool_attn = self.pointer.pool_question(q_seq, q_mask)
+            readout, ev_attn = self.pointer.read_events(event_tokens, event_mask, query)
             memory_read = readout
-            logits = self.answer_head(question_sem, readout)
-            question_attn = read_weights[0].detach().cpu().tolist()
-        elif self.use_slots:
-            read_weights, readout = self.memory.read(slots, question_sem)
-            memory_read = readout
-            logits = self.answer_head(question_sem, readout)
-            question_attn = read_weights[0].detach().cpu().tolist()
+            logits = self.answer_head(query, readout)
+            question_attn = ev_attn[0].detach().cpu().tolist()
+            if return_trace:
+                attn0 = ev_attn[0]
+                valid = event_mask[0]
+                if valid.any():
+                    masked = attn0.masked_fill(~valid, -1.0)
+                    top = int(masked.argmax().item())
+                    top_event = int(event_ids[0, top].item())
+                else:
+                    top = 0
+                    top_event = 0
+                pointer_trace = {
+                    "event_token_attention": attn0.detach().cpu().tolist(),
+                    "event_token_event_index": event_ids[0].detach().cpu().tolist(),
+                    "event_token_mask": valid.detach().cpu().tolist(),
+                    "question_pool_attention": q_pool_attn[0].detach().cpu().tolist(),
+                    "top_token": top,
+                    "top_event": top_event,
+                    "attention_entropy": float(
+                        collapse_metrics(read_attn=attn0[valid].unsqueeze(0))["read_attn_entropy"]
+                    )
+                    if valid.any()
+                    else 0.0,
+                    "readout": readout[0].detach().cpu().tolist(),
+                    "query": query[0].detach().cpu().tolist(),
+                }
         else:
-            memory_read = state
-            logits = self.answer_head(question_sem, state)
+            question_sem = self.encode_texts(questions)
+            if self.use_relational:
+                read_weights, readout = self.memory.read(memory, question_sem)
+                memory_read = readout
+                logits = self.answer_head(question_sem, readout)
+                question_attn = read_weights[0].detach().cpu().tolist()
+            elif self.use_slots:
+                read_weights, readout = self.memory.read(slots, question_sem)
+                memory_read = readout
+                logits = self.answer_head(question_sem, readout)
+                question_attn = read_weights[0].detach().cpu().tolist()
+            else:
+                memory_read = state
+                logits = self.answer_head(question_sem, state)
         n_events = torch.tensor(
             [len(events) for events in events_batch],
             device=device,
@@ -325,19 +400,22 @@ class SemanticStateModel(nn.Module):
         mention_logits = torch.stack(mention_steps, dim=1)
         aux = {}
         if self.role_head is not None:
-            feat = torch.cat([question_sem, memory_read], dim=-1)
+            left = query if self.use_pointer else question_sem
+            feat = torch.cat([left, memory_read], dim=-1)
             aux["role_logits"] = self.role_head(feat)
             aux["xfer_qty_logits"] = self.xfer_qty_head(feat)
         if return_trace:
             trace = {
                 "n_slots": self.config.n_slots if self.use_slots else 1,
                 "n_components": self.config.n_components if self.use_relational else 1,
+                "query_pointer": self.use_pointer,
                 "event_write_attention": write_attn_steps,
                 "event_update_delta": update_delta_steps,
                 "question_read_attention": question_attn,
                 "event_token_attention": token_attn_steps,
                 "event_relation_attention": relation_attn_steps,
                 "event_component_cosine": component_cosine_steps,
+                **pointer_trace,
             }
             if self.use_relational and last_memory is not None:
                 read_w = None
